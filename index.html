@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinSight AI – Enterprise Financial Dashboard</title>
+  <meta name="description" content="AI-powered financial document analysis platform for NBFC and SME credit evaluation." />
+
+  <!-- Stitch Fonts: Plus Jakarta Sans (headlines) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PDF Export Libraries — NEW (report-pdf.js feature) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       FINSIGHT AI — STITCH "PRECISION INTELLIGENCE" DESIGN SYSTEM
+       Dark Mode Default · Dual Mode · Glassmorphism · Blue Accent
+       ══════════════════════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Design Tokens ── */
+    :root {
+      --bg:          #0D1117;
+      --bg2:         #161B22;
+      --bg3:         #21262D;
+      --card:        rgba(22, 27, 34, 0.7);
+      --card-solid:  #161B22;
+      --border:      rgba(255,255,255,0.07);
+      --border2:     rgba(255,255,255,0.13);
+      --text:        #E6EDF3;
+      --text2:       #8B949E;
+      --text3:       #6E7681;
+      --accent:      #3B82F6;
+      --accent2:     #2563EB;
+      --accent-glow: rgba(59,130,246,0.20);
+      --green:       #22C55E;
+      --green-dim:   rgba(34,197,94,0.12);
+      --red:         #F85149;
+      --red-dim:     rgba(248,81,73,0.12);
+      --amber:       #F59E0B;
+      --amber-dim:   rgba(245,158,11,0.12);
+      --sidebar-w:   248px;
+      --topbar-h:    64px;
+      --radius:      14px;
+      --radius-sm:   8px;
+      --tt:          all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ── Light Mode ── */
+    html.light {
+      --bg:          #F8FAFC;
+      --bg2:         #FFFFFF;
+      --bg3:         #F1F5F9;
+      --card:        rgba(255,255,255,0.88);
+      --card-solid:  #FFFFFF;
+      --border:      rgba(15,23,42,0.08);
+      --border2:     rgba(15,23,42,0.14);
+      --text:        #0F172A;
+      --text2:       #475569;
+      --text3:       #94A3B8;
+      --accent:      #2563EB;
+      --accent2:     #1D4ED8;
+      --accent-glow: rgba(37,99,235,0.14);
+      --green:       #16A34A;
+      --green-dim:   rgba(22,163,74,0.10);
+      --red:         #DC2626;
+      --red-dim:     rgba(220,38,38,0.10);
+      --amber:       #D97706;
+      --amber-dim:   rgba(217,119,6,0.10);
+    }
+
+    html { font-size: 15px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    h1,h2,h3,h4,h5 { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes slideBot { from{opacity:0;transform:translateY(8px)}  to{opacity:1;transform:translateY(0)} }
+    @keyframes pulseGlow{ 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.82;transform:scale(1.01)} }
+    @keyframes spin     { to{transform:rotate(360deg)} }
+    @keyframes pulse2   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.78)} }
+    @keyframes bounce   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+    .anim-fade-up  { animation: fadeUp   0.52s cubic-bezier(0.22,1,0.36,1) both; }
+    .anim-slide-bot{ animation: slideBot 0.36s cubic-bezier(0.22,1,0.36,1) both; }
+
+    /* ══════════════════════════════════════════════
+       SIDEBAR — Fixed left, border-right active indicator
+       ══════════════════════════════════════════════ */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 0;
+      position: fixed; top: 0; left: 0;
+      height: 100vh; z-index: 200;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 11px;
+      padding: 22px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+      border-radius: 10px; display: grid; place-items: center;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+    }
+    .logo-icon svg { width: 18px; height: 18px; color: white; }
+    .logo-name { font-size: 17px; font-weight: 700; color: var(--text); }
+    .logo-badge {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.8px;
+      background: rgba(59,130,246,0.15); color: #93c5fd;
+      border: 1px solid rgba(59,130,246,0.25);
+      padding: 2px 7px; border-radius: 20px;
+    }
+    html.light .logo-badge { color: var(--accent); background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.2); }
+
+    .sidebar-nav {
+      flex: 1; padding: 14px 0;
+      display: flex; flex-direction: column; gap: 2px;
+      overflow-y: auto;
+    }
+
+    /* Nav items — border-right active indicator per Stitch spec */
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 20px;
+      color: var(--text2); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      border-right: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease,
+                  border-right-color 0.18s ease, padding-left 0.18s ease;
+      user-select: none;
+    }
+    .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+    .nav-item:hover {
+      background: rgba(59,130,246,0.07);
+      color: var(--text);
+      border-right-color: rgba(59,130,246,0.3);
+      padding-left: 24px;
+    }
+    .nav-item.active {
+      background: rgba(59,130,246,0.10);
+      color: var(--accent);
+      border-right-color: var(--accent);
+      font-weight: 600;
+    }
+    html.light .nav-item.active { background: rgba(37,99,235,0.07); }
+
+    .nav-divider {
+      height: 1px; background: var(--border);
+      margin: 8px 16px;
+    }
+    .nav-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text3);
+      padding: 8px 20px 4px;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .user-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    html.light .user-card { background: var(--bg3); }
+    .user-avatar {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #3B82F6, #22C55E);
+      border-radius: 50%; display: grid; place-items: center;
+      font-weight: 700; font-size: 13px; color: white; flex-shrink: 0;
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 11px; color: var(--text3); }
+
+    /* ══════════════════════════════════════════════
+       TOPBAR — Sticky, backdrop blur, search + icons
+       ══════════════════════════════════════════════ */
+    .main-wrap {
+      margin-left: var(--sidebar-w);
+      flex: 1; display: flex; flex-direction: column; min-height: 100vh;
+    }
+    .topbar {
+      height: var(--topbar-h);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; gap: 16px;
+      background: rgba(13,17,23,0.80);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    html.light .topbar { background: rgba(248,250,252,0.85); }
+
+    /* Search bar */
+    .topbar-search {
+      flex: 1; max-width: 460px;
+      position: relative;
+    }
+    .topbar-search svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; color: var(--text3); pointer-events: none;
+    }
+    .topbar-search input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border2);
+      border-radius: 30px;
+      padding: 8px 14px 8px 36px;
+      color: var(--text); font-size: 13px; font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    html.light .topbar-search input { background: var(--bg3); }
+    .topbar-search input::placeholder { color: var(--text3); }
+    .topbar-search input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* Status pill */
+    .status-pill {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--green-dim); border: 1px solid rgba(34,197,94,0.22);
+      color: var(--green); padding: 6px 13px;
+      border-radius: 30px; font-size: 12px; font-weight: 600;
+    }
+    html.light .status-pill { color: #16A34A; }
+    .status-dot {
+      width: 7px; height: 7px;
+      background: var(--green); border-radius: 50%;
+      animation: pulse2 2s infinite;
+    }
+    html.light .status-dot { background: #16A34A; }
+
+    /* Icon buttons */
+    .icon-btn {
+      position: relative;
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border); border-radius: 9px;
+      display: grid; place-items: center;
+      cursor: pointer; color: var(--text2);
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+    .icon-btn svg { width: 16px; height: 16px; }
+    .notif-dot {
+      position: absolute; top: -3px; right: -3px;
+      width: 8px; height: 8px;
+      background: var(--red); border-radius: 50%;
+      border: 2px solid var(--bg2);
+    }
+    /* CHANGED: Notification bell now opens a functional notification center. */
+    .notification-wrap {
+      position: relative;
+    }
+    .notif-count {
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: var(--red);
+      color: white;
+      border: 2px solid var(--bg2);
+      font-size: 10px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+    }
+    .notifications-menu {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      z-index: 850;
+      width: min(360px, calc(100vw - 36px));
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px) scale(0.98);
+      transform-origin: top right;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    html.light .notifications-menu {
+      box-shadow: 0 24px 60px rgba(15,23,42,0.16);
+    }
+    .notifications-menu.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    .notifications-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .notifications-head h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .notif-action {
+      border: none;
+      background: none;
+      color: var(--accent);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .notifications-list {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+    .notification-item {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: inherit;
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 10px;
+      padding: 13px 16px;
+      text-align: left;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.16s ease;
+      font-family: inherit;
+    }
+    .notification-item:hover {
+      background: rgba(59,130,246,0.08);
+    }
+    .notification-item.unread {
+      background: rgba(59,130,246,0.05);
+    }
+    .notif-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .notif-icon.info { background: var(--accent-glow); color: var(--accent); }
+    .notif-icon.success { background: var(--green-dim); color: var(--green); }
+    .notif-icon.warning { background: var(--amber-dim); color: var(--amber); }
+    .notif-icon.danger { background: var(--red-dim); color: var(--red); }
+    .notif-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .notif-body {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.45;
+    }
+    .notif-time {
+      font-size: 10px;
+      color: var(--text3);
+      white-space: nowrap;
+      padding-top: 2px;
+    }
+    .notif-empty {
+      padding: 34px 20px;
+      text-align: center;
+      color: var(--text3);
+      font-size: 13px;
+    }
+    .notifications-foot {
+      display: flex;
+      justify-content: flex-end;
+      padding: 11px 16px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    /* Page title (left of topbar) */
+    .topbar-title { min-width: 160px; }
+    .topbar-title h1 { font-size: 19px; font-weight: 700; line-height: 1.2; }
+    .topbar-title .crumb { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+    /* ══════════════════════════════════════════════
+       SECTIONS
+       ══════════════════════════════════════════════ */
+    .section { display: none; flex: 1; }
+    .section.active { display: flex; flex-direction: column; }
+
+    /* ══════════════════════════════════════════════
+       DASHBOARD — 2-column layout: main + right panel
+       ══════════════════════════════════════════════ */
+    .dashboard-layout {
+      display: flex; gap: 0; flex: 1;
+      min-height: calc(100vh - var(--topbar-h));
+    }
+    .dashboard-main {
+      flex: 1; padding: 28px; display: flex; flex-direction: column; gap: 20px;
+      overflow-y: auto; min-width: 0;
+    }
+    .dashboard-right {
+      width: 320px; flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      background: rgba(22,27,34,0.4);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    html.light .dashboard-right { background: rgba(248,250,252,0.6); }
+
+    /* ── Upload Hero Section ── */
+    .upload-hero {
+      border: 2px dashed rgba(59,130,246,0.30);
+      border-radius: 18px; padding: 36px 28px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 14px;
+      background: rgba(59,130,246,0.04);
+      cursor: pointer;
+      animation: pulseGlow 3.5s ease-in-out infinite;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .upload-hero:hover, .upload-hero.drag-over {
+      border-color: var(--accent);
+      background: rgba(59,130,246,0.08);
+      animation: none;
+    }
+    .upload-hero-icon {
+      width: 60px; height: 60px;
+      background: rgba(59,130,246,0.12);
+      border-radius: 50%; display: grid; place-items: center;
+      transition: background 0.2s;
+    }
+    .upload-hero:hover .upload-hero-icon { background: rgba(59,130,246,0.22); }
+    .upload-hero-icon svg { width: 28px; height: 28px; color: var(--accent); }
+    .upload-hero h2 { font-size: 20px; font-weight: 700; }
+    .upload-hero p { font-size: 13px; color: var(--text2); max-width: 380px; line-height: 1.6; }
+    .upload-hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+    /* ── KPI Cards Grid ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+    .kpi-card {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      display: flex; flex-direction: column; gap: 16px;
+      cursor: default;
+      animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.12s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.19s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.26s; }
+    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,0.35); }
+    html.light .kpi-card:hover { box-shadow: 0 6px 20px rgba(15,23,42,0.10); }
+
+    .kpi-card-top { display: flex; align-items: center; justify-content: space-between; }
+    .kpi-icon-wrap {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: grid; place-items: center;
+    }
+    .kpi-icon-wrap svg { width: 20px; height: 20px; }
+    .kpi-trend { font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .kpi-trend.up   { color: var(--green); }
+    .kpi-trend.down { color: var(--red); }
+    .kpi-trend.neu  { color: var(--text3); }
+
+    .kpi-card-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text2);
+    }
+    .kpi-card-value {
+      font-size: 26px; font-weight: 800;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1;
+    }
+    .kpi-card-bar {
+      height: 4px; background: rgba(255,255,255,0.07);
+      border-radius: 10px; overflow: hidden;
+    }
+    html.light .kpi-card-bar { background: rgba(0,0,0,0.07); }
+    .kpi-card-bar-fill {
+      height: 100%; border-radius: 10px;
+      background: var(--accent);
+      transition: width 1.2s ease;
+    }
+
+    /* ── 2-col Charts Row ── */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* ── Glass Card (shared) ── */
+    .g-card {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.3s ease;
+    }
+    .g-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.28); }
+    html.light .g-card:hover { box-shadow: 0 4px 16px rgba(15,23,42,0.08); }
+
+    .g-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px; border-bottom: 1px solid var(--border);
+    }
+    .g-card-header h3 { font-size: 15px; font-weight: 600; }
+    .g-card-body { padding: 20px; }
+
+    .card-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(59,130,246,0.12); color: #93c5fd;
+      border: 1px solid rgba(59,130,246,0.2);
+    }
+    html.light .card-badge { background: rgba(37,99,235,0.08); color: #2563EB; border-color: rgba(37,99,235,0.2); }
+    .card-badge.green { background: var(--green-dim); color: var(--green); border-color: rgba(34,197,94,0.25); }
+    .card-badge.amber { background: var(--amber-dim); color: var(--amber); border-color: rgba(245,158,11,0.25); }
+    .card-badge.red   { background: var(--red-dim);   color: var(--red);   border-color: rgba(248,81,73,0.25); }
+
+    /* ── Documents Table ── */
+    .doc-table { width: 100%; border-collapse: collapse; }
+    .doc-table th {
+      text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text3); padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .doc-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; }
+    html.light .doc-table td { border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .doc-table tbody tr { transition: background 0.15s; animation: fadeUp 0.4s ease both; }
+    .doc-table tbody tr:nth-child(1) { animation-delay: 0.04s; }
+    .doc-table tbody tr:nth-child(2) { animation-delay: 0.09s; }
+    .doc-table tbody tr:nth-child(3) { animation-delay: 0.14s; }
+    .doc-table tbody tr:hover td { background: rgba(59,130,246,0.04); }
+    .doc-filename { display: flex; align-items: center; gap: 10px; }
+    .doc-filename svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
+    .doc-filename span { font-weight: 600; color: var(--text); font-size: 13px; }
+    .doc-date { color: var(--text3); font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+    .ghost-btn {
+      background: none; border: none; color: var(--text3);
+      cursor: pointer; font-size: 18px; padding: 2px 6px;
+      border-radius: 6px; transition: color 0.2s, background 0.2s;
+    }
+    .ghost-btn:hover { color: var(--accent); background: var(--accent-glow); }
+
+    /* ══════════════════════════════════════════════
+       RIGHT PANEL — AI Chat + Market Outlook
+       ══════════════════════════════════════════════ */
+    /* AI Chat panel — blue header per Stitch */
+    .ai-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .ai-panel-header {
+      background: var(--accent);
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .ai-avatar {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%; display: grid; place-items: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .ai-panel-title { color: white; font-size: 14px; font-weight: 700; }
+    .ai-panel-sub   { color: rgba(255,255,255,0.68); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .ai-status-dot  { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: pulse2 1.8s infinite; margin-left: auto; }
+
+    .ai-messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 14px;
+      min-height: 280px; max-height: 420px;
+    }
+    .ai-messages::-webkit-scrollbar { width: 4px; }
+    .ai-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .chat-msg { display: flex; gap: 9px; align-items: flex-start; }
+    .chat-msg.user { flex-direction: row-reverse; }
+    .msg-av {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #3B82F6, #22C55E);
+      display: grid; place-items: center; font-size: 11px; font-weight: 700; color: white;
+    }
+    .chat-msg.user .msg-av { background: linear-gradient(135deg, #22C55E, #3B82F6); }
+    .msg-bubble {
+      max-width: 82%; padding: 10px 13px; border-radius: 14px;
+      font-size: 12px; line-height: 1.6;
+      animation: slideBot 0.34s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .chat-msg.ai   .msg-bubble { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-top-left-radius: 4px; }
+    .chat-msg.user .msg-bubble { background: var(--accent); color: white; border-top-right-radius: 4px; }
+    .msg-time { font-size: 10px; color: var(--text3); margin-top: 4px; padding: 0 2px; }
+
+    /* Typing indicator */
+    .typing-dots { display: flex; gap: 4px; padding: 2px 0; }
+    .typing-dot {
+      width: 6px; height: 6px; background: var(--text3); border-radius: 50%;
+      animation: bounce 0.8s ease infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: .15s; }
+    .typing-dot:nth-child(3) { animation-delay: .3s; }
+
+    .ai-input-row {
+      display: flex; gap: 8px; padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(22,27,34,0.4);
+    }
+    html.light .ai-input-row { background: rgba(248,250,252,0.6); }
+    .ai-input {
+      flex: 1; background: var(--bg);
+      border: 1px solid var(--border2); border-radius: 20px;
+      padding: 9px 14px; color: var(--text); font-size: 12px; font-family: inherit;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    html.light .ai-input { background: var(--bg3); }
+    .ai-input::placeholder { color: var(--text3); }
+    .ai-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .ai-send {
+      width: 34px; height: 34px; background: var(--accent); border: none;
+      border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+      flex-shrink: 0; transition: filter 0.2s, transform 0.2s;
+    }
+    .ai-send:hover { filter: brightness(1.12); transform: scale(1.08); }
+    .ai-send svg { width: 14px; height: 14px; color: white; }
+
+    /* Market Outlook widget */
+    .market-widget {
+      border-top: 1px solid var(--border);
+      padding: 18px 20px;
+    }
+    .market-widget h5 { font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+    .market-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+    }
+    .market-row:last-child { border-bottom: none; }
+    .market-label { font-size: 12px; color: var(--text2); }
+    .market-val   { font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .market-val.up   { color: var(--green); }
+    .market-val.down { color: var(--red); }
+    .market-val.neu  { color: var(--text); }
+
+    /* ══════════════════════════════════════════════
+       ANALYZER SECTION
+       ══════════════════════════════════════════════ */
+    .analyzer-wrap { padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 22px; }
+    .analyzer-layout { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
+
+    .upload-card {
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    .upload-zone {
+      border: 2px dashed rgba(59,130,246,0.32); border-radius: var(--radius-sm);
+      padding: 32px 16px; text-align: center; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      animation: pulseGlow 3.5s ease-in-out infinite;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent); background: rgba(59,130,246,0.06); animation: none;
+    }
+    .upload-zone svg { width: 38px; height: 38px; color: var(--text3); }
+    .upload-zone h3 { font-size: 14px; font-weight: 700; }
+    .upload-zone p  { font-size: 12px; color: var(--text3); }
+
+    .chip-group { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip {
+      font-size: 12px; padding: 5px 12px; border-radius: 20px;
+      border: 1px solid var(--border2); background: transparent;
+      color: var(--text2); cursor: pointer; transition: all .18s;
+    }
+    .chip:hover { border-color: var(--accent); color: #93c5fd; }
+    html.light .chip:hover { color: var(--accent); }
+    .chip.active { background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+    html.light .chip.active { color: var(--accent); }
+
+    .file-selected {
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.2);
+      border-radius: var(--radius-sm);
+    }
+    .file-icon { font-size: 26px; }
+    .file-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .file-size { font-size: 11px; color: var(--text3); }
+
+    .results-panel {
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+
+    /* Processing animation */
+    .processing-card { text-align: center; padding: 40px; }
+    .ai-brain { position: relative; width: 90px; height: 90px; display: grid; place-items: center; margin: 0 auto 24px; }
+    .brain-ring { position: absolute; border-radius: 50%; border: 2px solid rgba(59,130,246,0.4); animation: spin 3s linear infinite; }
+    .r1 { width: 90px; height: 90px; }
+    .r2 { width: 65px; height: 65px; animation-direction: reverse; animation-duration: 2s; border-color: rgba(34,197,94,0.5); }
+    .r3 { width: 42px; height: 42px; animation-duration: 1.4s; border-color: rgba(59,130,246,0.7); }
+    .brain-core {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #3B82F6, #22C55E);
+      border-radius: 50%; display: grid; place-items: center;
+      font-size: 9px; font-weight: 800; color: white; z-index: 1;
+    }
+    .proc-steps { display: flex; flex-direction: column; gap: 9px; max-width: 340px; margin: 0 auto; text-align: left; }
+    .proc-step { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-radius: var(--radius-sm); background: var(--bg3); font-size: 13px; color: var(--text2); opacity: .38; transition: opacity .3s; }
+    .proc-step.active { opacity: 1; border: 1px solid rgba(59,130,246,0.28); }
+    .proc-step.done   { opacity: .75; }
+    .proc-step.done .s-icon { color: var(--green); }
+    .s-icon { width: 18px; text-align: center; flex-shrink: 0; }
+    .s-spin { width: 14px; height: 14px; border: 2px solid rgba(59,130,246,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+
+    /* Result components */
+    .data-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .data-item {
+      background: var(--bg3); border-radius: var(--radius-sm);
+      padding: 13px 15px; border: 1px solid var(--border);
+    }
+    .data-key { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; margin-bottom: 5px; }
+    .data-val { font-size: 15px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+    .data-val.pos { color: var(--green); }
+    .data-val.neg { color: var(--red); }
+
+    .risk-layout { display: grid; grid-template-columns: 170px 1fr; gap: 22px; align-items: center; }
+    .risk-gauge {
+      position: relative; width: 150px; height: 150px; border-radius: 50%;
+      background: conic-gradient(var(--green) 0deg, var(--amber) 120deg, var(--red) 240deg, rgba(255,255,255,.05) 240deg);
+      display: grid; place-items: center;
+    }
+    .gauge-inner { position: absolute; inset: 11px; border-radius: 50%; background: var(--card-solid); display: grid; place-items: center; flex-direction: column; }
+    .gauge-num   { font-size: 26px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .gauge-lbl   { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+    .risk-bars   { display: flex; flex-direction: column; gap: 9px; }
+    .risk-bar-row { display: flex; align-items: center; gap: 10px; }
+    .rbr-label { font-size: 12px; color: var(--text2); width: 135px; flex-shrink: 0; }
+    .rbr-track { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
+    html.light .rbr-track { background: rgba(0,0,0,0.07); }
+    .rbr-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+    .rbr-val { font-size: 11px; font-weight: 700; width: 30px; text-align: right; }
+
+    .insights-list { display: flex; flex-direction: column; gap: 9px; }
+    .insight-row {
+      display: flex; gap: 13px; padding: 13px 15px;
+      background: var(--bg3); border-radius: var(--radius-sm);
+      border-left: 3px solid; align-items: flex-start;
+      animation: slideBot 0.38s ease both;
+    }
+    .insight-row.pos { border-color: var(--green); }
+    .insight-row.warn { border-color: var(--amber); }
+    .insight-row.neg  { border-color: var(--red); }
+    .insight-row.info { border-color: var(--accent); }
+    .ins-icon { font-size: 16px; flex-shrink: 0; }
+    .ins-text  { font-size: 13px; line-height: 1.6; color: var(--text2); }
+
+    .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* placeholder */
+    .placeholder {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 60px 32px; gap: 14px;
+    }
+    .placeholder svg { width: 130px; height: auto; }
+    .placeholder h3 { font-size: 18px; font-weight: 700; }
+    .placeholder p  { font-size: 13px; color: var(--text3); max-width: 300px; line-height: 1.6; }
+
+    /* ══════════════════════════════════════════════
+       CHAT SECTION (full page)
+       ══════════════════════════════════════════════ */
+    .chat-wrap { padding: 28px; flex: 1; display: flex; gap: 22px; align-items: start; }
+    .chat-main {
+      flex: 1;
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .chat-header {
+      background: var(--accent); padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .chat-header-av {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.2); border-radius: 50%;
+      display: grid; place-items: center; font-size: 16px;
+    }
+    .chat-header h3  { color: white; font-size: 15px; margin: 0; }
+    .chat-online     { color: rgba(255,255,255,0.7); font-size: 11px; }
+    .chat-messages-full {
+      flex: 1; min-height: 420px; max-height: 58vh; overflow-y: auto;
+      padding: 20px; display: flex; flex-direction: column; gap: 15px;
+    }
+    .chat-messages-full::-webkit-scrollbar { width: 4px; }
+    .chat-messages-full::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+    .chat-input-bar { display: flex; gap: 10px; padding: 16px 18px; border-top: 1px solid var(--border); }
+    .chat-text-input {
+      flex: 1; background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .chat-text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .chat-send-btn {
+      width: 40px; height: 40px; background: var(--accent); border: none;
+      border-radius: var(--radius-sm); display: grid; place-items: center;
+      cursor: pointer; transition: filter 0.2s, transform 0.15s;
+    }
+    .chat-send-btn:hover { filter: brightness(1.1); transform: scale(1.07); }
+    .chat-send-btn svg { width: 16px; height: 16px; color: white; }
+
+    .chat-sidebar {
+      width: 270px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .side-card {
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 18px;
+    }
+    .side-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .quick-q { display: flex; flex-direction: column; gap: 8px; }
+    .quick-q button {
+      text-align: left; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 9px 13px; font-size: 12px; color: var(--text2);
+      cursor: pointer; transition: all .18s; font-family: inherit;
+    }
+    .quick-q button:hover { border-color: rgba(59,130,246,0.35); color: #93c5fd; }
+    html.light .quick-q button:hover { color: var(--accent); }
+    .cap-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .cap-list li { font-size: 12px; color: var(--text2); }
+
+    /* ══════════════════════════════════════════════
+       REPORTS SECTION
+       ══════════════════════════════════════════════ */
+    .reports-wrap { padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .reports-table-card {
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .reports-table { width: 100%; border-collapse: collapse; }
+    .reports-table th {
+      text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3);
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .reports-table td { padding: 14px 16px; font-size: 13px; color: var(--text2); border-bottom: 1px solid rgba(255,255,255,0.04); }
+    html.light .reports-table td { border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .reports-table tbody tr { animation: fadeUp 0.4s ease both; transition: background 0.15s; }
+    .reports-table tbody tr:nth-child(1) { animation-delay: 0.04s; }
+    .reports-table tbody tr:nth-child(2) { animation-delay: 0.09s; }
+    .reports-table tbody tr:nth-child(3) { animation-delay: 0.14s; }
+    .reports-table tbody tr:hover td { background: rgba(59,130,246,0.04); }
+
+    /* ══════════════════════════════════════════════
+       BUTTONS
+       ══════════════════════════════════════════════ */
+    .btn-primary {
+      background: var(--accent); color: white; border: none;
+      border-radius: var(--radius-sm); padding: 10px 20px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: filter 0.2s, transform 0.18s, box-shadow 0.18s; font-family: inherit;
+    }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+    /* CHANGED: Loading state for PDF preview/export buttons added by report-pdf.js */
+    .btn-primary:disabled {
+      opacity: 0.72;
+      cursor: progress;
+      transform: none;
+      filter: none;
+    }
+    /* CHANGED: Native file inputs stay clickable by script without being visible. */
+    .native-file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0.01;
+      overflow: hidden;
+    }
+    .file-picker-label {
+      text-decoration: none;
+      user-select: none;
+    }
+    .btn-secondary {
+      background: transparent; color: var(--text2);
+      border: 1px solid var(--border2); border-radius: var(--radius-sm);
+      padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .18s; font-family: inherit;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: #93c5fd; }
+    html.light .btn-secondary:hover { color: var(--accent); }
+    .btn-ghost { background: none; border: none; color: #93c5fd; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0; }
+    html.light .btn-ghost { color: var(--accent); }
+    .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 6px; }
+    .w-full { width: 100%; justify-content: center; }
+
+    /* ══════════════════════════════════════════════
+       EMPTY STATES
+       ══════════════════════════════════════════════ */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; padding: 40px; color: var(--text3); text-align: center;
+    }
+    .empty-state svg { width: 44px; height: 44px; opacity: .35; }
+    .empty-state a { color: #93c5fd; text-decoration: none; }
+    html.light .empty-state a { color: var(--accent); }
+
+    /* Activity (for dashboard recent) */
+    .activity-item {
+      display: flex; align-items: center; gap: 13px; padding: 11px 14px;
+      background: var(--bg3); border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      transition: border-color 0.18s, transform 0.18s;
+      animation: fadeUp 0.4s ease both;
+    }
+    .activity-item:hover { border-color: rgba(59,130,246,0.28); transform: translateX(2px); }
+    .act-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .act-info { flex: 1; }
+    .act-name { font-size: 13px; font-weight: 600; }
+    .act-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .risk-pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .risk-low    { background: var(--green-dim); color: var(--green); }
+    .risk-medium { background: var(--amber-dim);  color: var(--amber); }
+    .risk-high   { background: var(--red-dim);    color: var(--red); }
+
+    /* Scrollbar for main areas */
+    .dashboard-main::-webkit-scrollbar { width: 5px; }
+    .dashboard-main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 5px; }
+
+    /* ── Theme Toggle Pill ─────────────────────────────
+       A pill-shaped switch with sun/moon icons in the topbar
+    ─────────────────────────────────────────────────── */
+    .theme-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border2);
+      border-radius: 30px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      user-select: none;
+    }
+    html.light .theme-pill { background: rgba(15,23,42,0.06); }
+    .theme-pill:hover { border-color: var(--accent); background: var(--accent-glow); }
+    .theme-pill-icon { width: 15px; height: 15px; color: var(--text2); transition: color 0.2s; flex-shrink: 0; }
+    .theme-pill:hover .theme-pill-icon { color: var(--accent); }
+    /* Toggle track + thumb */
+    .toggle-track {
+      width: 32px; height: 18px;
+      background: var(--border2);
+      border-radius: 30px;
+      position: relative;
+      transition: background 0.25s;
+      flex-shrink: 0;
+    }
+    html.light .toggle-track { background: var(--accent); }
+    .toggle-thumb {
+      width: 12px; height: 12px;
+      background: var(--text3);
+      border-radius: 50%;
+      position: absolute;
+      top: 3px; left: 3px;
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), background 0.25s;
+    }
+    html.light .toggle-thumb { transform: translateX(14px); background: white; }
+
+    /* Select override */
+    select {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 7px; padding: 5px 10px; color: var(--text2);
+      font-size: 12px; font-family: inherit; outline: none; cursor: pointer;
+    }
+    select:focus { border-color: var(--accent); }
+    html.light select { background: var(--bg3); }
+
+    /* ═══════════════════════════════════════════════════
+       CREDIT RISK REPORT PDF EXPORT — NEW (report-pdf.js)
+       ═══════════════════════════════════════════════════ */
+
+    /* ── Download button bar (shown after analysis) ── */
+    .rpt-btn-bar {
+      display: none; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--card); backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      animation: fadeUp 0.45s ease both;
+    }
+    .rpt-btn-bar-label { font-size: 12px; color: var(--text2); }
+
+    /* Download button pulse (first-load attention) */
+    @keyframes rptPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+      40%      { box-shadow: 0 0 0 8px rgba(37,99,235,0.22); }
+      70%      { box-shadow: 0 0 0 14px rgba(37,99,235,0); }
+    }
+    .rpt-btn-pulse { animation: rptPulse 1.4s ease 3; }
+
+    /* Spinner used inside download button while generating */
+    .rpt-spinner {
+      display: inline-block; width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    /* ── Report Preview Modal ── */
+    @keyframes modalSlideUp   { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes modalSlideDown { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(40px)} }
+
+    .rpt-modal-overlay {
+      position: fixed; inset: 0; z-index: 900;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .rpt-modal-overlay.rpt-modal-open {
+      opacity: 1;
+    }
+    .rpt-modal-overlay.rpt-modal-open .rpt-modal-card { animation: modalSlideUp 0.34s cubic-bezier(0.22,1,0.36,1) both; }
+    .rpt-modal-overlay.rpt-modal-closing .rpt-modal-card { animation: modalSlideDown 0.3s ease both; }
+
+    .rpt-modal-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; width: 440px; max-width: 100%;
+      max-height: 90vh; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+    }
+    .rpt-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px; border-bottom: 1px solid var(--border);
+    }
+    .rpt-modal-header h3 { font-size: 16px; font-weight: 700; margin: 0; }
+    .rpt-modal-close {
+      width: 30px; height: 30px; background: none;
+      border: 1px solid var(--border2); border-radius: 7px;
+      color: var(--text2); cursor: pointer; font-size: 14px;
+      display: grid; place-items: center; transition: all 0.18s;
+    }
+    .rpt-modal-close:hover { border-color: var(--red); color: var(--red); }
+    .rpt-modal-body {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .rpt-modal-body::-webkit-scrollbar { width: 4px; }
+    .rpt-modal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+    .rpt-preview-wrap {
+      border: 1px solid var(--border2); border-radius: 10px;
+      overflow: hidden; background: white;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+    }
+    .rpt-preview-label { font-size: 11px; color: var(--text3); text-align: center; }
+    .rpt-modal-footer {
+      display: flex; gap: 10px; padding: 16px 22px;
+      border-top: 1px solid var(--border); justify-content: flex-end;
+    }
+
+    /* ── Toast Notification ── */
+    @keyframes toastIn  { from{opacity:0;transform:translateX(100%)} to{opacity:1;transform:translateX(0)} }
+    @keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(110%)} }
+
+    .rpt-toast {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      max-width: 340px; padding: 13px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      backdrop-filter: blur(10px);
+    }
+    .rpt-toast-success {
+      background: rgba(22,163,74,0.92); color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .rpt-toast-error {
+      background: rgba(220,38,38,0.92); color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .rpt-toast-in  { animation: toastIn  0.36s cubic-bezier(0.22,1,0.36,1) both; }
+    .rpt-toast-out { animation: toastOut 0.42s ease both; }
+
+    /* ═══════════════════════════════════════════════════
+       FRAUD DETECTION STYLES — NEW (fraud.js feature)
+       ═══════════════════════════════════════════════════ */
+
+    /* KPI grid: allow 5 cards with auto fit */
+    /* CHANGED: kpi-grid now uses auto-fit so the 5th card fits naturally */
+    .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+    /* Fraud flag shake animation — plays once on load for High severity */
+    @keyframes fraudShake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-5px); }
+      40%      { transform: translateX(5px); }
+      60%      { transform: translateX(-4px); }
+      80%      { transform: translateX(4px); }
+    }
+    .fraud-flag-shake { animation: fadeUp 0.52s ease both, fraudShake 0.5s 0.7s ease both; }
+
+    /* Fraud flag card — slides in from left */
+    @keyframes slideLeft { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:translateX(0)} }
+    .fraud-flag-card {
+      border-left: 3px solid;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      animation: slideLeft 0.45s cubic-bezier(0.22,1,0.36,1) both;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .fraud-flag-card:hover { transform: translateX(3px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+
+    .fraud-flag-top { display: flex; align-items: flex-start; gap: 12px; }
+    .fraud-flag-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: grid; place-items: center; font-size: 16px; flex-shrink: 0;
+    }
+    .fraud-flag-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .fraud-flag-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .fraud-flag-desc { font-size: 12px; color: var(--text2); line-height: 1.55; }
+    .fraud-severity-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 9px;
+      border-radius: 20px; border: 1px solid; white-space: nowrap;
+      flex-shrink: 0; align-self: flex-start;
+    }
+
+    /* Ask AI button on flag card */
+    .fraud-ask-btn {
+      background: none; border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 6px 12px;
+      font-size: 11px; font-weight: 600; color: var(--text2);
+      cursor: pointer; transition: all 0.18s; font-family: inherit;
+      align-self: flex-start;
+    }
+    .fraud-ask-btn:hover { border-color: var(--accent); color: #93c5fd; background: var(--accent-glow); }
+    html.light .fraud-ask-btn:hover { color: var(--accent); }
+
+    /* Fraud Risk Meter */
+    .fraud-meter-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .fraud-meter-labels { display: flex; justify-content: space-between; align-items: center; }
+    .fraud-meter-track {
+      height: 10px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px; overflow: hidden;
+    }
+    html.light .fraud-meter-track { background: rgba(0,0,0,0.08); }
+    .fraud-meter-fill {
+      height: 100%; border-radius: 10px;
+      transition: width 1.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    .fraud-meter-ticks {
+      display: flex; justify-content: space-between;
+      font-size: 10px; font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Fraud flags list */
+    .fraud-flags-list { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Fraud panel clean state */
+    .fraud-empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 40px 20px; gap: 6px;
+    }
+
+    /* Fraud panel wrapper */
+    #fraud-panel {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      animation: fadeUp 0.55s 0.1s ease both;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="logo-name">FinSight</div>
+      <div class="logo-badge">AI · ENTERPRISE</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Main</span>
+    <a class="nav-item active" data-section="dashboard" onclick="showSection('dashboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item" data-section="analyzer" onclick="showSection('analyzer',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Document Analyzer
+    </a>
+    <a class="nav-item" data-section="reports" onclick="showSection('reports',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+
+    <div class="nav-divider"></div>
+    <span class="nav-section-label">Tools</span>
+    <a class="nav-item" data-section="chatbot" onclick="showSection('chatbot',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      AI Assistant
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">R</div>
+      <div class="user-info">
+        <div class="user-name">Raghav</div>
+        <div class="user-role">Senior Analyst</div>
+      </div>
+      <!-- Theme toggle embedded in user card area -->
+      <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" style="background:none;border:1px solid var(--border2);border-radius:7px;width:30px;height:30px;display:grid;place-items:center;cursor:pointer;color:var(--text2);transition:all .2s;flex-shrink:0;">
+        <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN WRAP ═══════════════════ -->
+<div class="main-wrap">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <h1 id="page-title">Dashboard</h1>
+      <div class="crumb">FinSight AI → <span id="breadcrumb-current">Overview</span></div>
+    </div>
+    <div class="topbar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search credit files, reports, analytics…" id="global-search" />
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        AI Engine Online
+      </div>
+
+      <!-- Dark / Light mode toggle pill -->
+      <button class="theme-pill" id="theme-pill-btn" onclick="toggleTheme()" title="Toggle dark / light mode">
+        <!-- Moon (visible in dark mode) -->
+        <svg id="icon-moon" class="theme-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <!-- Toggle track -->
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <!-- Sun (visible in light mode) -->
+        <svg id="icon-sun" class="theme-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+
+      <!-- CHANGED: Functional notification center with unread count and actions. -->
+      <div class="notification-wrap" id="notification-wrap">
+        <button class="icon-btn" id="notification-btn" title="Notifications" aria-haspopup="true" aria-expanded="false" onclick="toggleNotifications(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-count" id="notif-count">0</span>
+        </button>
+        <div class="notifications-menu" id="notifications-menu" role="menu" aria-labelledby="notification-btn">
+          <div class="notifications-head">
+            <h3>Notifications</h3>
+            <button class="notif-action" onclick="markAllNotificationsRead(event)">Mark all read</button>
+          </div>
+          <div class="notifications-list" id="notifications-list"></div>
+          <div class="notifications-foot">
+            <button class="notif-action" onclick="openNotificationDestination('reports')">View Reports</button>
+          </div>
+        </div>
+      </div>
+      <button class="icon-btn" title="Help">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ════════════════ DASHBOARD SECTION ════════════════ -->
+  <section id="section-dashboard" class="section active">
+    <div class="dashboard-layout">
+
+      <!-- LEFT: Main content -->
+      <div class="dashboard-main">
+
+        <!-- Upload Hero -->
+        <div class="upload-hero" id="dash-upload-zone"
+             ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          <div class="upload-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h2>Submit Analysis Request</h2>
+          <p>Drag &amp; drop financial statements, GST returns, or bank audit reports to initiate AI-powered credit scoring.</p>
+          <div class="upload-hero-btns">
+            <label class="btn-primary file-picker-label" for="file-input-dash" onclick="document.getElementById('file-input-dash').value = ''">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Browse Files
+            </label>
+            <button class="btn-secondary" onclick="event.stopPropagation();runDemoAnalysis()">✨ Run Demo</button>
+          </div>
+        </div>
+        <input type="file" id="file-input-dash" class="native-file-input" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls,.csv,.txt,.doc,.docx" onchange="handleDashFileSelect(event)" />
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <span class="kpi-trend up" id="kpi-risk-trend">+2.4%</span>
+            </div>
+            <div class="kpi-card-label">Risk Score</div>
+            <div class="kpi-card-value" id="kpi-risk" style="color:#3B82F6">—</div>
+            <div class="kpi-card-bar"><div class="kpi-card-bar-fill" id="kpi-risk-bar" style="width:0%;background:#3B82F6"></div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <div class="kpi-icon-wrap" style="background:rgba(34,197,94,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+              </div>
+              <span class="kpi-trend neu" id="kpi-docs-trend">Processed</span>
+            </div>
+            <div class="kpi-card-label">Docs Analyzed</div>
+            <div class="kpi-card-value" id="kpi-docs" style="color:#22C55E">0</div>
+            <div class="kpi-card-bar"><div class="kpi-card-bar-fill" id="kpi-docs-bar" style="width:0%;background:#22C55E"></div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span class="kpi-trend up" id="kpi-turnover-trend">Monthly</span>
+            </div>
+            <div class="kpi-card-label">Avg Turnover</div>
+            <div class="kpi-card-value" id="kpi-turnover" style="color:#F59E0B">—</div>
+            <div class="kpi-card-bar"><div class="kpi-card-bar-fill" id="kpi-turnover-bar" style="width:60%;background:#F59E0B"></div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <div class="kpi-icon-wrap" style="background:rgba(248,81,73,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#F85149" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <span class="kpi-trend up">↓ vs 30min</span>
+            </div>
+            <div class="kpi-card-label">Avg Process Time</div>
+            <div class="kpi-card-value" id="kpi-time" style="color:#F85149">~0s</div>
+            <div class="kpi-card-bar"><div class="kpi-card-bar-fill" style="width:12%;background:#F85149"></div></div>
+          </div>
+
+          <!-- FRAUD DETECTION KPI CARD — NEW (fraud.js) -->
+          <!-- Shows Fraud Risk Score 0-100 with color coding: green/amber/red -->
+          <div class="kpi-card" id="kpi-fraud-card">
+            <div class="kpi-card-top">
+              <div class="kpi-icon-wrap" style="background:rgba(239,68,68,0.12)">
+                <!-- Shield with alert icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <span class="kpi-trend neu" id="kpi-fraud-trend" style="color:var(--text3)">Pending</span>
+            </div>
+            <div class="kpi-card-label">Fraud Risk</div>
+            <div class="kpi-card-value" id="kpi-fraud-value" style="color:var(--text3)">—</div>
+            <div class="kpi-card-bar">
+              <div class="kpi-card-bar-fill" id="kpi-fraud-bar" style="width:0%;background:#EF4444;transition:width 1.4s cubic-bezier(0.22,1,0.36,1)"></div>
+            </div>
+          </div>
+
+        </div><!-- /kpi-grid -->
+
+        <!-- DOWNLOAD REPORT BUTTON BAR — NEW (report-pdf.js) -->
+        <!-- Hidden until showResults() triggers pulseDwnldBtn() -->
+        <div class="rpt-btn-bar" id="rpt-btn-bar">
+          <span class="rpt-btn-bar-label">📊 Analysis complete — Credit Risk Report ready</span>
+          <button id="rpt-dl-btn" class="btn-primary" onclick="openReportModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"
+              style="display:inline;vertical-align:middle;margin-right:6px">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download Report
+          </button>
+        </div>
+
+        <!-- FRAUD ANALYSIS PANEL — NEW (fraud.js) -->
+        <!-- Hidden until first analysis runs. renderFraudPanel() fills this. -->
+        <div id="fraud-panel" style="display:none"></div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="g-card">
+            <div class="g-card-header">
+              <h3>Transaction Trends</h3>
+              <select onchange="return false"><option>Last 6 Months</option><option>Last 30 Days</option></select>
+            </div>
+            <div class="g-card-body">
+              <canvas id="cashflowChart" height="180"></canvas>
+            </div>
+          </div>
+          <div class="g-card">
+            <div class="g-card-header">
+              <h3>Risk Distribution</h3>
+              <span class="card-badge green">Live</span>
+            </div>
+            <div class="g-card-body">
+              <canvas id="riskChart" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Documents Table -->
+        <div class="g-card">
+          <div class="g-card-header">
+            <h3>Recent Documents</h3>
+            <button class="btn-ghost" onclick="showSection('reports',document.querySelector('[data-section=reports]'))">View All →</button>
+          </div>
+          <div id="activity-list">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+              <p>No documents analyzed yet. <a href="#" onclick="showSection('analyzer',document.querySelector('[data-section=analyzer]'))">Upload your first →</a></p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /dashboard-main -->
+
+      <!-- RIGHT: AI panel + Market widget -->
+      <aside class="dashboard-right">
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-avatar">🤖</div>
+            <div>
+              <div class="ai-panel-title">FinInsight AI</div>
+              <div class="ai-panel-sub">Always Active</div>
+            </div>
+            <span class="ai-status-dot"></span>
+          </div>
+
+          <div class="ai-messages" id="dash-chat-messages">
+            <div class="chat-msg ai">
+              <div class="msg-av">AI</div>
+              <div>
+                <div class="msg-bubble">👋 Hello! I'm FinSight AI. Upload a document or ask me anything about credit assessment, risk scores, or GST compliance.</div>
+                <div class="msg-time">Now</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-input-row">
+            <input class="ai-input" id="dash-chat-input" type="text" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')sendDashMessage()" />
+            <button class="ai-send" onclick="sendDashMessage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="market-widget">
+          <h5>Market Outlook</h5>
+          <div class="market-row">
+            <span class="market-label">NIFTY 50</span>
+            <span class="market-val up">+0.45%</span>
+          </div>
+          <div class="market-row">
+            <span class="market-label">SENSEX</span>
+            <span class="market-val up">+0.38%</span>
+          </div>
+          <div class="market-row">
+            <span class="market-label">Repo Rate</span>
+            <span class="market-val neu">6.50%</span>
+          </div>
+          <div class="market-row">
+            <span class="market-label">Avg SME APR</span>
+            <span class="market-val neu">11.2%</span>
+          </div>
+          <div class="market-row">
+            <span class="market-label">USD/INR</span>
+            <span class="market-val down">83.42</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ════════════════ ANALYZER SECTION ════════════════ -->
+  <section id="section-analyzer" class="section">
+    <div class="analyzer-wrap">
+      <div class="analyzer-layout">
+
+        <!-- Upload Panel -->
+        <div class="upload-card">
+          <div class="g-card-header" style="padding:0 0 16px;border-bottom:1px solid var(--border)">
+            <h3>Document Upload</h3>
+            <span class="card-badge">AI Powered</span>
+          </div>
+
+          <label class="upload-zone" id="upload-zone" for="file-input"
+               ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+               onclick="document.getElementById('file-input').value = ''">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <h3>Drop your document here</h3>
+            <p>PDF, PNG, JPG, XLSX, CSV</p>
+            <span class="btn-primary btn-sm file-picker-label">Browse Files</span>
+          </label>
+          <input type="file" id="file-input" class="native-file-input" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls,.csv,.txt,.doc,.docx" onchange="handleFileSelect(event)" />
+
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px">Document Type</div>
+            <div class="chip-group">
+              <button class="chip active" onclick="selectChip(this,'bank_statement')">Bank Statement</button>
+              <button class="chip" onclick="selectChip(this,'invoice')">Invoice</button>
+              <button class="chip" onclick="selectChip(this,'gst_return')">GST Return</button>
+              <button class="chip" onclick="selectChip(this,'balance_sheet')">Balance Sheet</button>
+            </div>
+          </div>
+
+          <div id="selected-file-info" class="file-selected" style="display:none">
+            <div class="file-icon">📄</div>
+            <div>
+              <div class="file-name" id="file-name-display">document.pdf</div>
+              <div class="file-size" id="file-size-display">2.3 MB</div>
+            </div>
+          </div>
+
+          <button class="btn-primary w-full" id="analyze-btn" onclick="startAnalysis()" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+            Analyze with AI
+          </button>
+
+          <div style="text-align:center">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:10px">— or try sample data —</div>
+            <button class="btn-secondary w-full" onclick="runDemoAnalysis()">✨ Run Demo Analysis</button>
+          </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel">
+
+          <!-- Processing -->
+          <div id="processing-card" style="display:none">
+            <div class="processing-card">
+              <div class="ai-brain">
+                <div class="brain-ring r1"></div>
+                <div class="brain-ring r2"></div>
+                <div class="brain-ring r3"></div>
+                <div class="brain-core">AI</div>
+              </div>
+              <div class="proc-steps" id="processing-steps"></div>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div id="results-content" style="display:none;flex-direction:column;gap:18px">
+
+            <div class="g-card">
+              <div class="g-card-header"><h3>📋 Extracted Financial Data</h3><span class="card-badge green">Extracted</span></div>
+              <div class="g-card-body"><div class="data-grid-3" id="extracted-data-grid"></div></div>
+            </div>
+
+            <div class="g-card">
+              <div class="g-card-header"><h3>🎯 AI Risk Assessment</h3><span class="card-badge" id="risk-badge">—</span></div>
+              <div class="g-card-body">
+                <div class="risk-layout">
+                  <div style="display:flex;justify-content:center">
+                    <div class="risk-gauge" id="risk-gauge">
+                      <div class="gauge-inner">
+                        <span class="gauge-num" id="gauge-score">—</span>
+                        <span class="gauge-lbl">Risk Score</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="risk-bars" id="risk-factors"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="g-card">
+              <div class="g-card-header"><h3>🤖 AI-Generated Insights</h3><span class="card-badge">GPT-4 Powered</span></div>
+              <div class="g-card-body"><div class="insights-list" id="insights-list"></div></div>
+            </div>
+
+            <div class="action-row">
+              <button class="btn-primary" onclick="exportReport()">📥 Export Report</button>
+              <button class="btn-secondary" onclick="showSection('chatbot',document.querySelector('[data-section=chatbot]'))">💬 Ask AI Assistant</button>
+              <button class="btn-secondary" onclick="resetAnalysis()">🔄 New Analysis</button>
+            </div>
+          </div>
+
+          <!-- Placeholder -->
+          <div class="placeholder" id="placeholder-card">
+            <svg viewBox="0 0 200 180" fill="none">
+              <rect x="30" y="20" width="140" height="140" rx="14" fill="rgba(59,130,246,0.07)" stroke="rgba(59,130,246,0.18)" stroke-width="1.5"/>
+              <rect x="50" y="50" width="60" height="8" rx="4" fill="rgba(59,130,246,0.3)"/>
+              <rect x="50" y="68" width="100" height="6" rx="3" fill="rgba(59,130,246,0.14)"/>
+              <rect x="50" y="82" width="80" height="6"  rx="3" fill="rgba(59,130,246,0.14)"/>
+              <rect x="50" y="96" width="90" height="6"  rx="3" fill="rgba(59,130,246,0.14)"/>
+              <circle cx="150" cy="130" r="28" fill="rgba(59,130,246,0.88)"/>
+              <path d="M140 130 L147 137 L162 122" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h3>Ready to Analyze</h3>
+            <p>Upload a financial document or run the demo to see AI-powered extraction and risk assessment in action.</p>
+          </div>
+
+        </div><!-- /results-panel -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ CHATBOT SECTION ════════════════ -->
+  <section id="section-chatbot" class="section">
+    <div class="chat-wrap">
+      <div class="chat-main">
+        <div class="chat-header">
+          <div class="chat-header-av">🤖</div>
+          <div>
+            <h3>FinSight AI Assistant</h3>
+            <div class="chat-online">● Online — Ready to help</div>
+          </div>
+        </div>
+
+        <div class="chat-messages-full" id="chat-messages">
+          <div class="chat-msg ai">
+            <div class="msg-av">AI</div>
+            <div class="msg-bubble">👋 Hello! I'm the FinSight AI Assistant. I can help you understand financial documents, explain risk scores, answer questions about credit assessment, and more.<br/><br/>Try asking: <em>"What does a credit score of 650 mean?"</em> or <em>"Explain debt-to-income ratio"</em></div>
+          </div>
+        </div>
+
+        <div class="chat-input-bar">
+          <input class="chat-text-input" id="chat-input" type="text" placeholder="Ask about the analyzed document or financial concepts…" onkeydown="if(event.key==='Enter')sendMessage()" />
+          <button class="chat-send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-sidebar">
+        <div class="side-card">
+          <h4>Quick Questions</h4>
+          <div class="quick-q">
+            <button onclick="quickAsk('What does the risk score mean for this document?')">What does the risk score mean?</button>
+            <button onclick="quickAsk('What are the key financial red flags in a bank statement?')">Red flags in bank statements</button>
+            <button onclick="quickAsk('How is the credit eligibility determined for SMEs?')">SME credit eligibility</button>
+            <button onclick="quickAsk('Explain debt-to-income ratio in simple terms')">Debt-to-income ratio</button>
+            <button onclick="quickAsk('What is KYC and why is it important for NBFCs?')">What is KYC?</button>
+            <button onclick="quickAsk('How does GST turnover impact loan eligibility?')">GST &amp; loan eligibility</button>
+          </div>
+        </div>
+        <div class="side-card">
+          <h4>Capabilities</h4>
+          <ul class="cap-list">
+            <li>📊 Financial metric explanation</li>
+            <li>🎯 Risk score interpretation</li>
+            <li>📋 Document type guidance</li>
+            <li>💰 SME lending concepts</li>
+            <li>🔍 KYC &amp; compliance info</li>
+            <li>📈 Credit assessment logic</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ REPORTS SECTION ════════════════ -->
+  <section id="section-reports" class="section">
+    <div class="reports-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2 style="font-size:20px;font-weight:700">Analysis Reports</h2>
+        <span class="card-badge" id="report-count">0 Reports</span>
+      </div>
+      <div class="reports-table-card">
+        <div id="reports-list">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <p>No reports yet. Analyze a document to generate your first report.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /main-wrap -->
+
+<!-- ══════════════════════════════════════════════════════
+     REPORT PREVIEW MODAL — NEW (report-pdf.js)
+     ══════════════════════════════════════════════════════ -->
+<div id="rpt-modal" class="rpt-modal-overlay" onclick="if(event.target===this)closeReportModal()">
+  <div class="rpt-modal-card">
+    <div class="rpt-modal-header">
+      <h3>📋 Report Preview</h3>
+      <button class="rpt-modal-close" onclick="closeReportModal()" title="Close">✕</button>
+    </div>
+    <div class="rpt-modal-body">
+      <p class="rpt-preview-label">Preview of your Credit Risk Report (50% scale). Scroll to see full content.</p>
+      <div class="rpt-preview-wrap">
+        <div id="rpt-preview-frame"></div>
+      </div>
+    </div>
+    <div class="rpt-modal-footer">
+      <button class="btn-secondary" onclick="closeReportModal()">Close</button>
+      <button class="btn-primary" id="rpt-modal-dl-btn" onclick="downloadReport()">
+        Download PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION — NEW (report-pdf.js) -->
+<div id="rpt-toast" class="rpt-toast" style="display:none"></div>
+
+<!-- PDF TEMPLATE — NEW (report-pdf.js) -->
+<!-- Positioned off-screen; html2canvas captures this div to generate the PDF -->
+<!-- ⚠️ Do NOT remove: this is the source for PDF generation -->
+<div id="pdf-tpl" style="position:fixed;left:-9999px;top:0;z-index:-999;pointer-events:none"></div>
+
+<script src="app.js"></script>
+<!-- FRAUD DETECTION ENGINE — NEW FILE (fraud.js) -->
+<script src="fraud.js"></script>
+<!-- CREDIT RISK REPORT PDF ENGINE — NEW FILE (report-pdf.js) -->
+<script src="report-pdf.js"></script>
+<script>
+  // ── Override: showSection for new layout ──
+  function showSection(name, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+    const titles = { dashboard:'Dashboard', analyzer:'Document Analyzer', chatbot:'AI Assistant', reports:'Reports' };
+    const crumbs = { dashboard:'Overview', analyzer:'Analyze Document', chatbot:'Chat', reports:'All Reports' };
+    document.getElementById('page-title').textContent          = titles[name] || name;
+    document.getElementById('breadcrumb-current').textContent  = crumbs[name]  || name;
+  }
+
+  // ── Dashboard file select (hero zone) ──
+  // CHANGED: Centralized upload picker so dashboard/analyzer file selection is reliable.
+  // CHANGED: Notification center state, rendering, unread count, and navigation actions.
+  function ensureNotifications() {
+    if (!Array.isArray(state.notifications)) {
+      state.notifications = [
+        {
+          id: 'welcome',
+          type: 'info',
+          title: 'Workspace ready',
+          body: 'AI Engine Online. Upload a file or run the demo to start an analysis.',
+          action: 'analyzer',
+          createdAt: Date.now() - 1000 * 60 * 8,
+          unread: true,
+        },
+        {
+          id: 'report-ready-info',
+          type: 'success',
+          title: 'PDF reports enabled',
+          body: 'Credit Risk Score reports are available after analysis.',
+          action: 'reports',
+          createdAt: Date.now() - 1000 * 60 * 22,
+          unread: true,
+        },
+      ];
+    }
+    return state.notifications;
+  }
+
+  function getNotificationIcon(type) {
+    return { info: 'i', success: '✓', warning: '!', danger: '!' }[type] || 'i';
+  }
+
+  function escapeNotificationHTML(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatNotificationTime(createdAt) {
+    const diff = Math.max(0, Date.now() - createdAt);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Now';
+    if (mins < 60) return mins + 'm';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h';
+    return Math.floor(hours / 24) + 'd';
+  }
+
+  function renderNotifications() {
+    const notifications = ensureNotifications();
+    const list = document.getElementById('notifications-list');
+    const countEl = document.getElementById('notif-count');
+    if (!list || !countEl) return;
+
+    const unreadCount = notifications.filter(n => n.unread).length;
+    countEl.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    countEl.style.display = unreadCount ? 'flex' : 'none';
+
+    if (!notifications.length) {
+      list.innerHTML = '<div class="notif-empty">No notifications</div>';
+      return;
+    }
+
+    list.innerHTML = notifications.map(n => `
+      <button class="notification-item ${n.unread ? 'unread' : ''}" onclick="openNotification('${n.id}')" role="menuitem">
+        <span class="notif-icon ${n.type || 'info'}">${getNotificationIcon(n.type)}</span>
+        <span>
+          <span class="notif-title">${escapeNotificationHTML(n.title)}</span>
+          <span class="notif-body">${escapeNotificationHTML(n.body)}</span>
+        </span>
+        <span class="notif-time">${formatNotificationTime(n.createdAt)}</span>
+      </button>
+    `).join('');
+  }
+
+  function addNotification(notification) {
+    const notifications = ensureNotifications();
+    notifications.unshift({
+      id: 'notif-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      type: 'info',
+      title: 'Update',
+      body: '',
+      action: 'dashboard',
+      createdAt: Date.now(),
+      unread: true,
+      ...notification,
+    });
+    state.notifications = notifications.slice(0, 12);
+    renderNotifications();
+  }
+
+  function toggleNotifications(event) {
+    event?.stopPropagation();
+    const menu = document.getElementById('notifications-menu');
+    const btn = document.getElementById('notification-btn');
+    if (!menu || !btn) return;
+    renderNotifications();
+    const willOpen = !menu.classList.contains('open');
+    menu.classList.toggle('open', willOpen);
+    btn.setAttribute('aria-expanded', String(willOpen));
+  }
+
+  function closeNotifications() {
+    const menu = document.getElementById('notifications-menu');
+    const btn = document.getElementById('notification-btn');
+    if (menu) menu.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  function markAllNotificationsRead(event) {
+    event?.stopPropagation();
+    ensureNotifications().forEach(n => { n.unread = false; });
+    renderNotifications();
+  }
+
+  function openNotification(id) {
+    const item = ensureNotifications().find(n => n.id === id);
+    if (!item) return;
+    item.unread = false;
+    renderNotifications();
+    closeNotifications();
+    openNotificationDestination(item.action);
+  }
+
+  function openNotificationDestination(action) {
+    closeNotifications();
+    if (action === 'reports') {
+      showSection('reports', document.querySelector('[data-section=reports]'));
+    } else if (action === 'analyzer') {
+      showSection('analyzer', document.querySelector('[data-section=analyzer]'));
+    } else {
+      showSection('dashboard', document.querySelector('[data-section=dashboard]'));
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!document.getElementById('notification-wrap')?.contains(event.target)) closeNotifications();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeNotifications();
+  });
+  document.addEventListener('DOMContentLoaded', renderNotifications);
+
+  function openUploadPicker(source = 'analyzer') {
+    const inputId = source === 'dashboard' ? 'file-input-dash' : 'file-input';
+    const input = document.getElementById(inputId);
+    if (!input) {
+      console.warn('[Upload] File input not found:', inputId);
+      return;
+    }
+    input.value = '';
+    input.click();
+  }
+
+  function getSelectedUploadFile(e) {
+    return e?.target?.files && e.target.files.length ? e.target.files[0] : null;
+  }
+
+  function handleDashFileSelect(e) {
+    const file = getSelectedUploadFile(e);
+    if (!file) return;
+    // Route to analyzer section with file pre-selected
+    showSection('analyzer', document.querySelector('[data-section=analyzer]'));
+    setSelectedFile(file);
+  }
+
+  // ── Dashboard drag/drop hooks (use analyzer zone id fallback) ──
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('upload-zone')?.classList.add('drag-over');
+    document.getElementById('dash-upload-zone')?.classList.add('drag-over');
+  }
+  function handleDragLeave() {
+    document.getElementById('upload-zone')?.classList.remove('drag-over');
+    document.getElementById('dash-upload-zone')?.classList.remove('drag-over');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    handleDragLeave();
+    const file = e.dataTransfer?.files && e.dataTransfer.files.length ? e.dataTransfer.files[0] : null;
+    if (file) {
+      showSection('analyzer', document.querySelector('[data-section=analyzer]'));
+      setSelectedFile(file);
+    }
+  }
+
+  // ── Show analyze button when file selected ──
+  // CHANGED: Analyzer file input now uses the same robust extraction helper.
+  function handleFileSelect(e) {
+    const file = getSelectedUploadFile(e);
+    if (file) setSelectedFile(file);
+  }
+
+  const _origSetFile = setSelectedFile;
+  function setSelectedFile(file) {
+    state.selectedFile = file;
+    const nameEl = document.getElementById('file-name-display');
+    const sizeEl = document.getElementById('file-size-display');
+    const infoEl = document.getElementById('selected-file-info');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    if (nameEl) nameEl.textContent = file.name;
+    if (sizeEl) sizeEl.textContent = formatBytes(file.size);
+    if (infoEl) infoEl.style.display = 'flex';
+    if (analyzeBtn) analyzeBtn.style.display = 'inline-flex';
+    addNotification({
+      type: 'info',
+      title: 'File selected',
+      body: `${file.name} is ready for analysis.`,
+      action: 'analyzer',
+    });
+  }
+
+  // ── Dashboard mini-chat ──
+  function sendDashMessage() {
+    const input = document.getElementById('dash-chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    const msgs = document.getElementById('dash-chat-messages');
+
+    // User bubble
+    const userDiv = document.createElement('div');
+    userDiv.className = 'chat-msg user';
+    userDiv.innerHTML = `<div class="msg-av">R</div><div><div class="msg-bubble">${text}</div></div>`;
+    msgs.appendChild(userDiv);
+
+    // Typing
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-msg ai';
+    typingDiv.innerHTML = `<div class="msg-av">AI</div><div><div class="msg-bubble"><div class="typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div></div>`;
+    msgs.appendChild(typingDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    setTimeout(() => {
+      typingDiv.querySelector('.msg-bubble').innerHTML = getAIResponse(text);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 900 + Math.random() * 600);
+  }
+
+  // ── showResults override: render activity in dashboard as table rows ──
+  function addActivity(data) {
+    const list = document.getElementById('activity-list');
+    const empty = list.querySelector('.empty-state');
+    if (empty) empty.remove();
+
+    const riskClass = data.riskScore >= 70 ? 'risk-low' : data.riskScore >= 45 ? 'risk-medium' : 'risk-high';
+    const dotColor  = data.riskScore >= 70 ? 'var(--green)' : data.riskScore >= 45 ? 'var(--amber)' : 'var(--red)';
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.style.margin = '0 20px 8px';
+    item.innerHTML = `
+      <div class="act-dot" style="background:${dotColor}"></div>
+      <div class="act-info">
+        <div class="act-name">${data.company}</div>
+        <div class="act-meta">${data.period || state.selectedDocType} · ${data.processingTime}s</div>
+      </div>
+      <span class="risk-pill ${riskClass}">${data.riskLabel}</span>`;
+    list.prepend(item);
+  }
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) {
+      html.classList.replace('dark', 'light');
+      localStorage.setItem('finsight-theme', 'light');
+    } else {
+      html.classList.replace('light', 'dark');
+      localStorage.setItem('finsight-theme', 'dark');
+    }
+  }
+
+  // Restore saved theme on load
+  (function () {
+    const saved = localStorage.getItem('finsight-theme');
+    if (saved === 'light') {
+      document.documentElement.classList.replace('dark', 'light');
+    }
+  })();
+
+  // ── showResults: hook into results display ──
+  function showResults(data) {
+    document.getElementById('processing-card').style.display = 'none';
+    const rc = document.getElementById('results-content');
+    rc.style.display = 'flex';
+    state.analysisResult = data;
+    state.docsProcessed++;
+    state.chatContext = data;
+
+    // Extracted grid
+    const grid = document.getElementById('extracted-data-grid');
+    grid.innerHTML = '';
+    Object.entries(data.extracted).forEach(([k,v]) => {
+      grid.innerHTML += `<div class="data-item"><div class="data-key">${k}</div><div class="data-val ${v.cls||''}">${v.val}</div></div>`;
+    });
+
+    // Risk badge
+    const badge = document.getElementById('risk-badge');
+    badge.textContent = data.riskLabel;
+    badge.style.background = hexToRgba(data.riskColor, 0.14);
+    badge.style.color = data.riskColor;
+    badge.style.borderColor = hexToRgba(data.riskColor, 0.28);
+
+    // Gauge
+    document.getElementById('gauge-score').textContent = data.riskScore;
+    document.getElementById('gauge-score').style.color  = data.riskColor;
+
+    // Risk factors
+    const rf = document.getElementById('risk-factors');
+    rf.innerHTML = '';
+    data.factors.forEach(f => {
+      rf.innerHTML += `
+        <div class="risk-bar-row">
+          <span class="rbr-label">${f.label}</span>
+          <div class="rbr-track"><div class="rbr-fill" style="width:${f.val}%;background:${f.color}"></div></div>
+          <span class="rbr-val" style="color:${f.color}">${f.val}</span>
+        </div>`;
+    });
+
+    // Insights
+    const ins = document.getElementById('insights-list');
+    ins.innerHTML = '';
+    const typeMap = {positive:'pos',warning:'warn',negative:'neg',info:'info'};
+    data.insights.forEach(i => {
+      ins.innerHTML += `
+        <div class="insight-row ${typeMap[i.type]||'info'}">
+          <span class="ins-icon">${i.icon}</span>
+          <span class="ins-text">${i.text}</span>
+        </div>`;
+    });
+
+    // KPI update
+    document.getElementById('kpi-docs').textContent = state.docsProcessed;
+    document.getElementById('kpi-docs-bar').style.width = Math.min(state.docsProcessed * 20, 100) + '%';
+    document.getElementById('kpi-risk').textContent = data.riskScore + '/100';
+    document.getElementById('kpi-risk').style.color = data.riskColor;
+    document.getElementById('kpi-risk-bar').style.width = data.riskScore + '%';
+    document.getElementById('kpi-risk-bar').style.background = data.riskColor;
+    const avgCredit = Object.values(data.extracted).find(v => v.val.includes('L') && v.cls === 'positive');
+    if (avgCredit) {
+      document.getElementById('kpi-turnover').textContent = avgCredit.val;
+    }
+    document.getElementById('kpi-time').textContent = data.processingTime + 's';
+
+    addReport(data);
+    addActivity(data);
+
+    // ── FRAUD DETECTION HOOK — NEW (fraud.js) ──
+    if (typeof runFraudAnalysis === 'function') runFraudAnalysis(data);
+
+    // ── DOWNLOAD REPORT HOOK — NEW (report-pdf.js) ──
+    // Shows and pulses the Download Report button bar after analysis completes.
+    if (typeof pulseDwnldBtn === 'function') pulseDwnldBtn();
+
+    addNotification({
+      type: data.riskScore >= 70 ? 'success' : data.riskScore >= 45 ? 'warning' : 'danger',
+      title: 'Analysis complete',
+      body: `${data.company} scored ${data.riskScore}/100 (${data.riskLabel}).`,
+      action: 'reports',
+    });
+
+    if (state.fraudScore >= 60) {
+      addNotification({
+        type: 'danger',
+        title: 'Fraud review needed',
+        body: `${state.fraudFlags?.length || 0} fraud flag(s) detected. Review before approval.`,
+        action: 'dashboard',
+      });
+    }
+  }
+
+  // ── resetAnalysis override ──
+  function resetAnalysis() {
+    state.selectedFile = null; state.analysisResult = null;
+    document.getElementById('results-content').style.display = 'none';
+    document.getElementById('processing-card').style.display = 'none';
+    document.getElementById('placeholder-card').style.display = 'flex';
+    document.getElementById('selected-file-info').style.display = 'none';
+    document.getElementById('analyze-btn').style.display = 'none';
+    document.getElementById('file-input').value = '';
+    // CHANGED: Clear dashboard file input too so re-selecting the same file still fires change.
+    const dashInput = document.getElementById('file-input-dash');
+    if (dashInput) dashInput.value = '';
+
+    // ── FRAUD RESET — NEW (fraud.js) ──
+    const fp = document.getElementById('fraud-panel');
+    if (fp) fp.style.display = 'none';
+    const fv = document.getElementById('kpi-fraud-value');
+    const fb = document.getElementById('kpi-fraud-bar');
+    const ft = document.getElementById('kpi-fraud-trend');
+    if (fv) { fv.textContent = '—'; fv.style.color = 'var(--text3)'; }
+    if (fb) { fb.style.width = '0%'; }
+    if (ft) { ft.textContent = 'Pending'; ft.style.color = 'var(--text3)'; }
+    state.fraudFlags = []; state.fraudScore = 0;
+
+    // ── REPORT BUTTON RESET — NEW (report-pdf.js) ──
+    // Hide the Download Report button bar on reset
+    const rBar = document.getElementById('rpt-btn-bar');
+    if (rBar) rBar.style.display = 'none';
+  }
+
+  // ── renderReports override ──
+  function renderReports() {
+    const el = document.getElementById('reports-list');
+    document.getElementById('report-count').textContent = state.reports.length + ' Report' + (state.reports.length !== 1 ? 's' : '');
+    if (!state.reports.length) {
+      el.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><p>No reports yet.</p></div>`;
+      return;
+    }
+    el.innerHTML = `
+      <table class="reports-table">
+        <thead><tr><th>Company</th><th>Period</th><th>Risk Score</th><th>Status</th><th>Analyzed At</th><th></th></tr></thead>
+        <tbody>${state.reports.map(r => `
+          <tr>
+            <td style="color:var(--text);font-weight:600">${r.company}</td>
+            <td style="color:var(--text3)">${r.period||'—'}</td>
+            <td style="color:${r.riskColor};font-weight:700;font-family:'JetBrains Mono',monospace">${r.riskScore}/100</td>
+            <td><span class="risk-pill ${r.riskScore>=70?'risk-low':r.riskScore>=45?'risk-medium':'risk-high'}">${r.riskLabel}</span></td>
+            <td style="color:var(--text3)">${r.timestamp}</td>
+            <td><button class="btn-secondary btn-sm" onclick='downloadJSON(${JSON.stringify(r)})'>Export</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  // ── addChatMsg override for full chat section ──
+  function addChatMsg(role, html, isTyping=false) {
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    const label = role === 'ai' ? 'AI' : 'R';
+    div.innerHTML = `<div class="msg-av">${label}</div><div class="msg-bubble">${isTyping ? '<div class="typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>' : html}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  // ── sendMessage override ──
+  function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim(); if (!text) return;
+    input.value = '';
+    addChatMsg('user', text);
+    const typingEl = addChatMsg('ai','',true);
+    setTimeout(() => {
+      typingEl.querySelector('.msg-bubble').innerHTML = getAIResponse(text);
+      document.getElementById('chat-messages').scrollTop = 9999;
+    }, 900 + Math.random() * 700);
+  }
+
+  // Quick ask
+  function quickAsk(q) {
+    showSection('chatbot', document.querySelector('[data-section=chatbot]'));
+    document.getElementById('chat-input').value = q;
+    sendMessage();
+  }
+</script>
+</body>
+</html>

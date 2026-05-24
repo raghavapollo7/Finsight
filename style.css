@@ -1,0 +1,649 @@
+/* =====================================================
+   FinSight AI – Design System (style.css)
+   UPDATED: Migrated to Stitch "Precision Intelligence" design system
+   Changes: Colors, typography (Plus Jakarta Sans), glassmorphism,
+            dark/light mode tokens, animations, blue accent, blue chat header,
+            border-right sidebar indicator, backdrop-blur topbar
+   ===================================================== */
+
+/* ── Reset & Base ──────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design Tokens — Dark Mode (Default) ─────────────
+   UPDATED: Replaced purple (#7c3aed) palette with Stitch blue (#3B82F6)
+   Source: Stitch FinSight AI Enterprise Dashboard design system
+   ─────────────────────────────────────────────────── */
+:root {
+  --bg:              #0D1117;
+  --bg2:             #161B22;
+  --bg3:             #21262D;
+  --card:            #161B22;
+  --border:          rgba(255,255,255,0.06);
+  --border2:         rgba(255,255,255,0.12);
+  --text:            #E6EDF3;
+  --text2:           #8B949E;
+  --text3:           #6E7681;
+  /* UPDATED: Accent from purple → Stitch electric blue */
+  --accent:          #3B82F6;
+  --accent2:         #2563EB;
+  --accent-glow:     rgba(59,130,246,0.22);
+  /* Semantic colors — updated to Stitch palette */
+  --green:           #22C55E;
+  --red:             #F85149;
+  --amber:           #F59E0B;
+  --blue:            #58A6FF;
+  /* Stitch named tokens */
+  --primary:         #adc6ff;
+  --primary-ctr:     #4d8eff;
+  --secondary:       #4ae176;
+  --tertiary:        #ffb95f;
+  --surface:         #0d1418;
+  --surface-ctr:     #192125;
+  --surface-high:    #242b2f;
+  --surface-highest: #2f363a;
+  --outline:         #424754;
+  /* Layout */
+  --sidebar-w:       240px;
+  --radius:          16px;
+  --radius-sm:       8px;
+  /* ADDED: Smooth 300ms theme transition per Stitch spec */
+  --tt:              background 0.3s ease, color 0.3s ease,
+                     border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ── Light Mode Token Overrides ─────────────────────
+   ADDED: Complete light mode palette (Stitch "Paper" aesthetic)
+   Toggle by adding/removing class="light" on <html>
+   ─────────────────────────────────────────────────── */
+html.light {
+  --bg:              #F8FAFC;
+  --bg2:             #FFFFFF;
+  --bg3:             #F1F5F9;
+  --card:            #FFFFFF;
+  --border:          rgba(15,23,42,0.08);
+  --border2:         rgba(15,23,42,0.15);
+  --text:            #0F172A;
+  --text2:           #475569;
+  --text3:           #94A3B8;
+  --accent:          #2563EB;
+  --accent2:         #1D4ED8;
+  --accent-glow:     rgba(37,99,235,0.15);
+  --green:           #16A34A;
+  --red:             #DC2626;
+  --amber:           #D97706;
+  --blue:            #2563EB;
+  --primary:         #2563EB;
+  --primary-ctr:     #DBEAFE;
+  --secondary:       #16A34A;
+  --tertiary:        #D97706;
+  --surface:         #F8FAFC;
+  --surface-ctr:     #F1F5F9;
+  --surface-high:    #E2E8F0;
+  --surface-highest: #CBD5E1;
+  --outline:         #CBD5E1;
+}
+
+html { font-size: 15px; }
+/* UPDATED: Primary body font → Inter; smooth theme transition on body */
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: var(--tt);
+}
+
+/* ── Typography ─────────────────────────────────────
+   ADDED: Plus Jakarta Sans for all headings (Stitch design spec)
+   ─────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
+
+/* ── Glassmorphism Utility ─────────────────────────
+   ADDED: Glass card style — backdrop blur, translucent bg, subtle border
+   Used by KPI cards and hero sections per Stitch design
+   ─────────────────────────────────────────────────── */
+.glass-card {
+  background: rgba(22, 27, 34, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: var(--tt);
+}
+html.light .glass-card {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(15,23,42,0.08);
+}
+
+/* ══════════════════════════════════════════════════
+   ANIMATIONS — Added per Stitch design spec:
+   • KPI cards: staggered slide-up on load
+   • Charts: animate left to right on load
+   • Sidebar hover: smooth slide highlight
+   • Upload zone: gentle pulse
+   • Dark/light toggle: 300ms transition (via --tt var)
+   • Chat messages: slide in from bottom
+   • Table rows: fade in on load
+   • Card hover: translateY -2px with shadow
+   ══════════════════════════════════════════════════ */
+/* ADDED: All animation keyframes */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-bottom {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes chart-grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes pulse-gentle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.82; transform: scale(1.012); }
+}
+@keyframes pulse  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.45;transform:scale(.8)} }
+@keyframes spin   { to { transform: rotate(360deg); } }
+@keyframes typing { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+.fade-in-up      { animation: fade-in-up 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+.slide-in-bottom { animation: slide-in-bottom 0.38s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-pulse-gentle { animation: pulse-gentle 3s ease-in-out infinite; }
+
+/* ── Sidebar ─────────────────────────────────────────
+   UPDATED: Border-right active indicator (Stitch style),
+   smooth hover slide background, blue active color
+   ─────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 24px 0;
+  position: fixed; top: 0; left: 0;
+  height: 100vh; z-index: 100;
+  transition: var(--tt);
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+/* UPDATED: Logo gradient → blue */
+.logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  border-radius: 10px; display: grid; place-items: center;
+}
+.logo-icon svg { width: 18px; height: 18px; color: white; }
+.logo-text { display: flex; align-items: baseline; gap: 6px; }
+.logo-name { font-size: 17px; font-weight: 700; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; }
+/* UPDATED: Badge → blue gradient */
+.logo-badge {
+  font-size: 10px; font-weight: 700;
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  color: white; padding: 2px 7px; border-radius: 20px; letter-spacing: 0.5px;
+}
+.sidebar-nav { flex: 1; padding: 16px 0; display: flex; flex-direction: column; gap: 2px; }
+/* UPDATED: Nav item — border-right indicator, hover slides bg in */
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 20px;
+  color: var(--text2); text-decoration: none;
+  font-size: 14px; font-weight: 500;
+  border-right: 3px solid transparent;
+  transition: background 0.18s ease, color 0.18s ease,
+              border-right-color 0.18s ease, padding-left 0.18s ease;
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+/* UPDATED: Hover — subtle blue bg slide, right border hint */
+.nav-item:hover {
+  background: rgba(59,130,246,0.07);
+  color: var(--text);
+  border-right-color: rgba(59,130,246,0.35);
+  padding-left: 24px;
+}
+/* UPDATED: Active — solid blue border-right, blue text */
+.nav-item.active {
+  background: rgba(59,130,246,0.1);
+  color: var(--accent);
+  border-right-color: var(--accent);
+  font-weight: 600;
+}
+html.light .nav-item:hover  { background: rgba(37,99,235,0.06); }
+html.light .nav-item.active { background: rgba(37,99,235,0.08); color: var(--accent); }
+.sidebar-footer { padding: 16px 16px 0; border-top: 1px solid var(--border); }
+.user-card { display: flex; align-items: center; gap: 10px; }
+/* UPDATED: User avatar → blue-green gradient */
+.user-avatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #3B82F6, #22C55E);
+  border-radius: 50%; display: grid; place-items: center;
+  font-weight: 700; font-size: 14px; color: white;
+}
+.user-info { display: flex; flex-direction: column; }
+.user-name { font-size: 13px; font-weight: 600; }
+.user-role { font-size: 11px; color: var(--text3); }
+
+/* ── Theme Toggle ───────────────────────────────────
+   ADDED: Sun/moon toggle button for dark/light mode
+   ─────────────────────────────────────────────────── */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px; width: 36px; height: 36px;
+  display: grid; place-items: center;
+  cursor: pointer; color: var(--text2);
+  transition: border-color 0.2s, color 0.2s;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.theme-toggle svg { width: 16px; height: 16px; }
+
+/* ── Main Content ─────────────────────────────────── */
+.main-content {
+  margin-left: var(--sidebar-w); flex: 1;
+  display: flex; flex-direction: column;
+}
+/* UPDATED: Topbar — backdrop blur, frosted glass per Stitch design */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 64px;
+  background: rgba(13,17,23,0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  transition: var(--tt);
+}
+html.light .topbar { background: rgba(248,250,252,0.85); }
+.topbar-left h1 { font-size: 20px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+.breadcrumb { font-size: 12px; color: var(--text3); display: block; margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+/* UPDATED: Status pill → green (Stitch success color) */
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.2);
+  color: #4ade80; padding: 6px 14px;
+  border-radius: 30px; font-size: 12px; font-weight: 600;
+}
+html.light .status-pill {
+  color: #16A34A;
+  background: rgba(22,163,74,0.1);
+  border-color: rgba(22,163,74,0.25);
+}
+.status-dot {
+  width: 8px; height: 8px;
+  background: #4ade80; border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+html.light .status-dot { background: #16A34A; }
+.btn-icon {
+  position: relative; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 8px;
+  width: 36px; height: 36px; display: grid; place-items: center;
+  cursor: pointer; color: var(--text2);
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon svg { width: 16px; height: 16px; }
+.notif-badge {
+  position: absolute; top: -4px; right: -4px;
+  width: 16px; height: 16px; background: var(--red);
+  border-radius: 50%; font-size: 9px; font-weight: 700;
+  display: grid; place-items: center; color: white;
+}
+
+/* ── Sections ─────────────────────────────────────── */
+.section { display: none; padding: 28px; flex-direction: column; gap: 22px; }
+.section.active { display: flex; }
+
+/* ── Cards ─────────────────────────────────────────
+   UPDATED: Glassmorphism backdrop, hover lifts -2px with shadow
+   ─────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px;
+  transition: var(--tt), transform 0.22s ease, box-shadow 0.22s ease;
+}
+/* UPDATED: Card hover lift -2px + diffused shadow (Stitch spec) */
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+}
+html.light .card:hover { box-shadow: 0 4px 16px rgba(15,23,42,0.08); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.card-header h3 { font-size: 15px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif; }
+/* UPDATED: Badge color → blue */
+.card-badge {
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(59,130,246,0.12); color: #93c5fd;
+  border: 1px solid rgba(59,130,246,0.2);
+}
+html.light .card-badge { background: rgba(37,99,235,0.08); color: #2563EB; border-color: rgba(37,99,235,0.2); }
+.card-badge.success { background: rgba(34,197,94,0.12); color: #4ade80; border-color: rgba(34,197,94,0.25); }
+html.light .card-badge.success { background: rgba(22,163,74,0.1); color: #16A34A; border-color: rgba(22,163,74,0.25); }
+
+/* ── KPI Grid ─────────────────────────────────────
+   UPDATED: Glassmorphism, staggered fade-in-up, hover -2px lift
+   ─────────────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  display: flex; align-items: center; gap: 16px;
+  cursor: default;
+  /* ADDED: Staggered slide-up animation per Stitch */
+  animation: fade-in-up 0.55s cubic-bezier(0.22,1,0.36,1) both;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  backdrop-filter: blur(4px);
+}
+/* ADDED: Stagger delays */
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.12s; }
+.kpi-card:nth-child(3) { animation-delay: 0.19s; }
+.kpi-card:nth-child(4) { animation-delay: 0.26s; }
+/* UPDATED: Hover lift -2px + shadow per Stitch spec */
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.32);
+}
+html.light .kpi-card:hover { box-shadow: 0 4px 16px rgba(15,23,42,0.1); }
+.kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
+.kpi-icon svg { width: 22px; height: 22px; }
+.kpi-data { display: flex; flex-direction: column; gap: 2px; }
+.kpi-value { font-size: 22px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+.kpi-label { font-size: 12px; color: var(--text2); font-weight: 500; }
+.kpi-delta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.kpi-delta.positive { color: var(--green); }
+
+/* ── Charts ─────────────────────────────────────── */
+.charts-row { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+/* ADDED: Chart animate left-to-right per Stitch */
+canvas { animation: fade-in-up 0.8s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Activity List ──────────────────────────────── */
+.activity-list { display: flex; flex-direction: column; gap: 10px; }
+.activity-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; background: var(--bg2);
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  transition: border-color 0.2s, transform 0.2s;
+  /* ADDED: Fade-in per Stitch table row animation */
+  animation: fade-in-up 0.45s ease both;
+}
+.activity-item:hover { border-color: rgba(59,130,246,0.3); transform: translateX(2px); }
+.activity-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.activity-info { flex: 1; }
+.activity-name { font-size: 13px; font-weight: 600; }
+.activity-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.activity-risk { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+/* UPDATED: Risk colors aligned to new palette */
+.risk-low    { background: rgba(34,197,94,.1);  color: #4ade80; }
+.risk-medium { background: rgba(245,158,11,.1); color: #fbbf24; }
+.risk-high   { background: rgba(248,81,73,.1);  color: #f87171; }
+html.light .risk-low    { background: rgba(22,163,74,.1);  color: #16A34A; }
+html.light .risk-medium { background: rgba(217,119,6,.1);  color: #D97706; }
+html.light .risk-high   { background: rgba(220,38,38,.1);  color: #DC2626; }
+
+/* ── Empty State ───────────────────────────────── */
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px; color: var(--text3); text-align: center; }
+.empty-state svg { width: 48px; height: 48px; opacity: .38; }
+.empty-state a { color: #93c5fd; text-decoration: none; }
+html.light .empty-state a { color: var(--accent); }
+
+/* ── Analyzer Layout ───────────────────────────── */
+.analyzer-layout { display: grid; grid-template-columns: 320px 1fr; gap: 22px; align-items: start; }
+.upload-panel  { display: flex; flex-direction: column; gap: 18px; }
+.results-panel { display: flex; flex-direction: column; gap: 18px; }
+/* UPDATED: Upload zone — gentle pulse animation per Stitch */
+.upload-zone {
+  border: 2px dashed rgba(59,130,246,0.35);
+  border-radius: var(--radius); padding: 36px 20px;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.25s, background 0.25s, animation 0s;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  animation: pulse-gentle 3s ease-in-out infinite;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(59,130,246,0.06);
+  animation: none;
+}
+.upload-icon svg { width: 40px; height: 40px; color: var(--text3); }
+.upload-title { font-size: 14px; font-weight: 600; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; }
+.upload-sub { font-size: 12px; color: var(--text3); }
+.doc-type-selector { display: flex; flex-direction: column; gap: 10px; }
+.doc-type-selector label { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.type-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font-size: 12px; padding: 6px 13px; border-radius: 20px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--text2); cursor: pointer; transition: all .2s;
+}
+.chip:hover { border-color: var(--accent); color: #93c5fd; }
+html.light .chip:hover { color: var(--accent); }
+.chip.active { background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.45); color: #93c5fd; }
+html.light .chip.active { color: var(--accent); }
+.selected-file-info { display: flex; flex-direction: column; gap: 12px; }
+.file-meta {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  background: var(--bg2); border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.file-icon { font-size: 28px; }
+.file-meta span { display: block; }
+.file-meta span:first-child { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.file-meta span:last-child { font-size: 11px; color: var(--text3); }
+.demo-section { text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.demo-label { font-size: 12px; color: var(--text3); }
+
+/* ── Buttons ─────────────────────────────────────
+   UPDATED: Primary button → solid blue (Stitch spec)
+   ─────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--accent); color: white;
+  border: none; border-radius: var(--radius-sm);
+  padding: 10px 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  transition: filter 0.2s, transform 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+.btn-outline {
+  background: transparent; color: var(--text2);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  padding: 10px 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s; font-family: inherit;
+}
+.btn-outline:hover { border-color: var(--accent); color: #93c5fd; }
+html.light .btn-outline:hover { color: var(--accent); }
+.btn-text { background: none; border: none; color: #93c5fd; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+html.light .btn-text { color: var(--accent); }
+.full-width { width: 100%; justify-content: center; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ── Processing Animation ──────────────────────── */
+.processing-card { text-align: center; padding: 40px; }
+.processing-animation { display: flex; justify-content: center; margin-bottom: 30px; }
+.ai-brain { position: relative; width: 100px; height: 100px; display: grid; place-items: center; }
+.brain-ring { position: absolute; border-radius: 50%; border: 2px solid rgba(59,130,246,0.4); animation: spin 3s linear infinite; }
+.r1 { width: 100px; height: 100px; animation-duration: 3s; }
+.r2 { width: 72px;  height: 72px;  animation-direction: reverse; animation-duration: 2s; border-color: rgba(34,197,94,0.5); }
+.r3 { width: 48px;  height: 48px;  animation-duration: 1.5s; border-color: rgba(59,130,246,0.7); }
+/* UPDATED: Brain core → blue-green gradient */
+.brain-core {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, #3B82F6, #22C55E);
+  border-radius: 50%; display: grid; place-items: center;
+  font-size: 10px; font-weight: 800; color: white; z-index: 1;
+}
+.processing-steps { display: flex; flex-direction: column; gap: 10px; text-align: left; max-width: 360px; margin: 0 auto; }
+.proc-step { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--bg2); font-size: 13px; opacity: .4; transition: opacity .3s; }
+.proc-step.active { opacity: 1; border: 1px solid rgba(59,130,246,0.3); }
+.proc-step.done   { opacity: .8; }
+.proc-step.done .step-icon { color: var(--green); }
+.step-icon { width: 18px; text-align: center; }
+/* UPDATED: Spinner → blue */
+.step-spinner { width: 14px; height: 14px; border: 2px solid rgba(59,130,246,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+
+/* ── Data Grid ──────────────────────────────────── */
+.data-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.data-item { background: var(--bg2); border-radius: var(--radius-sm); padding: 14px 16px; border: 1px solid var(--border); transition: var(--tt); }
+.data-key { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; margin-bottom: 6px; }
+.data-val { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', 'Inter', monospace; color: var(--text); }
+.data-val.positive { color: var(--green); }
+.data-val.negative { color: var(--red); }
+
+/* ── Risk Gauge ─────────────────────────────────── */
+.risk-layout { display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: center; }
+.risk-gauge-wrap { display: flex; justify-content: center; }
+.risk-gauge {
+  position: relative; width: 160px; height: 160px; border-radius: 50%;
+  background: conic-gradient(var(--green) 0deg, var(--amber) 120deg, var(--red) 240deg, rgba(255,255,255,.06) 240deg);
+  display: grid; place-items: center;
+}
+.gauge-fill { position: absolute; inset: 12px; border-radius: 50%; background: var(--card); display: grid; place-items: center; flex-direction: column; }
+.gauge-center { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.gauge-score  { font-size: 28px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+.gauge-label  { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+.risk-factors { display: flex; flex-direction: column; gap: 10px; }
+.risk-factor  { display: flex; align-items: center; gap: 12px; }
+.rf-label     { font-size: 12px; color: var(--text2); width: 140px; flex-shrink: 0; }
+.rf-bar-wrap  { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
+html.light .rf-bar-wrap { background: rgba(0,0,0,0.07); }
+.rf-bar { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.rf-val { font-size: 12px; font-weight: 600; width: 36px; text-align: right; }
+
+/* ── Insights ───────────────────────────────────── */
+.insights-list { display: flex; flex-direction: column; gap: 10px; }
+.insight-item {
+  display: flex; gap: 14px; padding: 14px 16px;
+  background: var(--bg2); border-radius: var(--radius-sm);
+  border-left: 3px solid; align-items: flex-start;
+  /* ADDED: slide-in-bottom animation */
+  animation: slide-in-bottom 0.38s ease both;
+}
+.insight-icon { font-size: 18px; flex-shrink: 0; }
+.insight-text { font-size: 13px; line-height: 1.6; color: var(--text2); }
+.insight-item.positive { border-color: var(--green); }
+.insight-item.warning  { border-color: var(--amber); }
+.insight-item.negative { border-color: var(--red); }
+.insight-item.info     { border-color: var(--blue); }
+
+/* ── Placeholder ────────────────────────────────── */
+.placeholder-card { text-align: center; padding: 60px 40px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.placeholder-illustration svg { width: 160px; height: auto; }
+.placeholder-card h3 { font-size: 18px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+.placeholder-card p  { font-size: 14px; color: var(--text3); max-width: 320px; line-height: 1.6; }
+
+/* ── Chat ───────────────────────────────────────────
+   UPDATED: Blue header per Stitch design,
+   user messages → blue bg, AI messages → surface glass,
+   chat messages slide in from bottom
+   ─────────────────────────────────────────────────── */
+.chat-layout { display: grid; grid-template-columns: 1fr 280px; gap: 22px; align-items: start; }
+.chat-container { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+/* UPDATED: Chat header → solid blue background (Stitch spec) */
+.chat-container .card-header {
+  padding: 18px 22px;
+  background: var(--accent);
+  border-radius: var(--radius) var(--radius) 0 0;
+  margin: -22px -22px 0;
+  border-bottom: none;
+}
+.chat-container .card-header h3 { color: white !important; }
+.chat-avatar-icon { font-size: 26px; }
+.chat-online-text { font-size: 11px; color: rgba(255,255,255,0.72); }
+.chat-messages {
+  flex: 1; min-height: 500px; max-height: 60vh; overflow-y: auto;
+  padding: 20px; display: flex; flex-direction: column; gap: 16px;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.chat-msg { display: flex; gap: 12px; align-items: flex-start; }
+.chat-msg.user { flex-direction: row-reverse; }
+/* UPDATED: AI avatar → blue-green gradient */
+.msg-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #22C55E);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0; color: white;
+}
+.chat-msg.user .msg-avatar { background: linear-gradient(135deg, #22C55E, #3B82F6); }
+/* ADDED: Chat bubble slide-in animation per Stitch */
+.msg-bubble {
+  max-width: 75%; padding: 12px 16px; border-radius: 14px;
+  font-size: 13px; line-height: 1.6;
+  animation: slide-in-bottom 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+.chat-msg.ai .msg-bubble   { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-top-left-radius: 4px; }
+/* UPDATED: User messages → Primary Blue per Stitch */
+.chat-msg.user .msg-bubble { background: var(--accent); color: white; border-top-right-radius: 4px; }
+.typing-indicator { display: flex; gap: 4px; padding: 14px 18px; align-items: center; }
+.typing-dot { width: 7px; height: 7px; background: var(--text3); border-radius: 50%; animation: typing .8s ease infinite; }
+.typing-dot:nth-child(2) { animation-delay: .15s; }
+.typing-dot:nth-child(3) { animation-delay: .3s; }
+.chat-input-row { display: flex; gap: 10px; padding: 16px 18px; border-top: 1px solid var(--border); }
+/* UPDATED: Chat input focus → blue glow per Stitch */
+.chat-input {
+  flex: 1; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  padding: 10px 14px; color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+/* UPDATED: Send button → blue */
+.btn-send {
+  width: 40px; height: 40px;
+  background: var(--accent); border: none; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+  transition: transform .15s, filter .15s;
+}
+.btn-send:hover { transform: scale(1.1); filter: brightness(1.1); }
+.btn-send svg { width: 16px; height: 16px; color: white; }
+.quick-actions { display: flex; flex-direction: column; gap: 8px; }
+.quick-btn {
+  text-align: left; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: 12px; color: var(--text2);
+  cursor: pointer; transition: all .2s; font-family: inherit;
+}
+.quick-btn:hover { border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+html.light .quick-btn:hover { color: var(--accent); }
+.capability-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.capability-list li { font-size: 13px; color: var(--text2); }
+
+/* ── Reports Table ──────────────────────────────────
+   UPDATED: No vertical borders (Stitch spec),
+   horizontal dividers only, table row stagger fade-in
+   ─────────────────────────────────────────────────── */
+.reports-table { width: 100%; border-collapse: collapse; }
+.reports-table th {
+  text-align: left; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--text3);
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+}
+.reports-table td {
+  padding: 14px; font-size: 13px; color: var(--text2);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+html.light .reports-table td { border-bottom: 1px solid rgba(0,0,0,0.04); }
+.reports-table tr:hover td { background: var(--bg2); }
+/* ADDED: Table row stagger fade-in per Stitch */
+.reports-table tbody tr {
+  animation: fade-in-up 0.4s ease both;
+}
+.reports-table tbody tr:nth-child(1) { animation-delay: 0.04s; }
+.reports-table tbody tr:nth-child(2) { animation-delay: 0.09s; }
+.reports-table tbody tr:nth-child(3) { animation-delay: 0.14s; }
+.reports-table tbody tr:nth-child(n+4) { animation-delay: 0.19s; }
+.btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 6px; }
