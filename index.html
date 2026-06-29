@@ -1759,6 +1759,7 @@
 <!-- ⚠️ Do NOT remove: this is the source for PDF generation -->
 <div id="pdf-tpl" style="position:fixed;left:-9999px;top:0;z-index:-999;pointer-events:none"></div>
 
+<script src="config.js"></script><!-- API Base URL — edit config.js to switch between local and production -->
 <script src="app.js"></script>
 <!-- FRAUD DETECTION ENGINE — NEW FILE (fraud.js) -->
 <script src="fraud.js"></script>
@@ -1994,7 +1995,7 @@
   }
 
   // ── Dashboard mini-chat ──
-  function sendDashMessage() {
+  async function sendDashMessage() {
     const input = document.getElementById('dash-chat-input');
     const text = input.value.trim();
     if (!text) return;
@@ -2014,10 +2015,13 @@
     msgs.appendChild(typingDiv);
     msgs.scrollTop = msgs.scrollHeight;
 
-    setTimeout(() => {
-      typingDiv.querySelector('.msg-bubble').innerHTML = getAIResponse(text);
-      msgs.scrollTop = msgs.scrollHeight;
-    }, 900 + Math.random() * 600);
+    try {
+      const reply = await getAIResponseAsync(text);
+      typingDiv.querySelector('.msg-bubble').innerHTML = reply;
+    } catch (err) {
+      typingDiv.querySelector('.msg-bubble').textContent = "Failed to receive a response.";
+    }
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   // ── showResults override: render activity in dashboard as table rows ──
@@ -2219,16 +2223,19 @@
   }
 
   // ── sendMessage override ──
-  function sendMessage() {
+  async function sendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim(); if (!text) return;
     input.value = '';
     addChatMsg('user', text);
     const typingEl = addChatMsg('ai','',true);
-    setTimeout(() => {
-      typingEl.querySelector('.msg-bubble').innerHTML = getAIResponse(text);
-      document.getElementById('chat-messages').scrollTop = 9999;
-    }, 900 + Math.random() * 700);
+    try {
+      const reply = await getAIResponseAsync(text);
+      typingEl.querySelector('.msg-bubble').innerHTML = reply;
+    } catch (err) {
+      typingEl.querySelector('.msg-bubble').textContent = "Failed to receive a response.";
+    }
+    document.getElementById('chat-messages').scrollTop = 9999;
   }
 
   // Quick ask

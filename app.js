@@ -229,11 +229,87 @@ function runDemoAnalysis() {
   showProcessing(data);
 }
 
-function startAnalysis() {
+async function startAnalysis() {
   if (!state.selectedFile) return;
-  const data = DEMO_DATASETS[state.selectedDocType] || DEMO_DATASETS['bank_statement'];
-  data.company = state.selectedFile.name.replace(/\.[^.]+$/, '');
-  showProcessing(data);
+
+  const formData = new FormData();
+  formData.append("file", state.selectedFile);
+  formData.append("docType", state.selectedDocType);
+
+  // Show processing card immediately
+  document.getElementById('placeholder-card').style.display = 'none';
+  document.getElementById('results-content').style.display = 'none';
+  const pc = document.getElementById('processing-card');
+  if (pc) pc.style.display = 'block';
+
+  const steps = [
+    { label: 'Extracting document text (OCR)', delay: 600 },
+    { label: 'Identifying document type & structure', delay: 1200 },
+    { label: 'Running NLP entity extraction', delay: 1800 },
+    { label: 'Computing financial ratios', delay: 2600 },
+    { label: 'AI risk model inference', delay: 3400 },
+    { label: 'Generating insights report', delay: 4000 },
+  ];
+
+  const container = document.getElementById('processing-steps');
+  if (container) {
+    container.innerHTML = '';
+    steps.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'proc-step';
+      el.id = 'step-' + i;
+      el.innerHTML = `<span class="step-icon">○</span><span>${s.label}</span>`;
+      container.appendChild(el);
+    });
+  }
+
+  steps.forEach((s, i) => {
+    setTimeout(() => {
+      if (i > 0) {
+        const prev = document.getElementById('step-' + (i - 1));
+        if (prev) { prev.className = 'proc-step done'; prev.querySelector('.step-icon').textContent = '✓'; }
+      }
+      const el = document.getElementById('step-' + i);
+      if (el) {
+        el.className = 'proc-step active';
+        el.querySelector('.step-icon').innerHTML = '<div class="step-spinner"></div>';
+      }
+    }, s.delay);
+  });
+
+  const startTime = Date.now();
+
+  try {
+    const apiResponse = await fetch(`${window.FINSIGHT_API}/analyze`, {
+      method: "POST",
+      body: formData
+    });
+
+    if (!apiResponse.ok) {
+      const errText = await apiResponse.text();
+      throw new Error(errText || "Analysis failed");
+    }
+
+    const realResult = await apiResponse.json();
+
+    const elapsed = Date.now() - startTime;
+    const remainingTime = Math.max(0, 4600 - elapsed);
+
+    setTimeout(() => {
+      const last = document.getElementById('step-' + (steps.length - 1));
+      if (last) { last.className = 'proc-step done'; last.querySelector('.step-icon').textContent = '✓'; }
+      setTimeout(() => showResults(realResult), 600);
+    }, remainingTime);
+
+  } catch (error) {
+    console.error("Analysis failed:", error);
+    if (typeof showToast === 'function') {
+      showToast("❌ Analysis failed: " + error.message, "error");
+    } else {
+      alert("Analysis failed: " + error.message);
+    }
+    resetAnalysis();
+  }
 }
 
 function showProcessing(data) {
@@ -480,17 +556,57 @@ function addChatMsg(role, html, isTyping = false) {
   return div;
 }
 
-function sendMessage() {
+async function getAIResponseAsync(userMsg) {
+  state.chatHistory = state.chatHistory || [];
+  try {
+    const response = await fetch(`${window.FINSIGHT_API}/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: userMsg,
+        history: state.chatHistory
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(errText || "Chat request failed");
+    }
+
+    const data = await response.json();
+
+    state.chatHistory.push(["human", userMsg]);
+    state.chatHistory.push(["ai", data.response]);
+    if (state.chatHistory.length > 20) {
+      state.chatHistory.shift();
+      state.chatHistory.shift();
+    }
+
+    return data.response;
+  } catch (error) {
+    console.error("RAG Chat Error:", error);
+    const localResp = getAIResponse(userMsg);
+    return `⚠️ <em>Assistant backend offline. Using cached knowledge base:</em><br><br>${localResp}`;
+  }
+}
+
+async function sendMessage() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
   addChatMsg('user', text);
   const typingEl = addChatMsg('ai', '', true);
-  setTimeout(() => {
-    typingEl.querySelector('.msg-bubble').innerHTML = getAIResponse(text);
-    document.getElementById('chat-messages').scrollTop = 9999;
-  }, 900 + Math.random() * 700);
+  
+  try {
+    const reply = await getAIResponseAsync(text);
+    typingEl.querySelector('.msg-bubble').innerHTML = reply;
+  } catch (err) {
+    typingEl.querySelector('.msg-bubble').textContent = "Failed to receive a response.";
+  }
+  document.getElementById('chat-messages').scrollTop = 9999;
 }
 
 function quickAsk(q) {

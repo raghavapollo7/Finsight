@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+backend/venv/
+venv/
+env/
+.venv/
+
+# Environment variables — NEVER commit real keys
+backend/.env
+.env
+
+# Temp files created during document analysis
+backend/temp/
+*.tmp
+
+# IDE / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db

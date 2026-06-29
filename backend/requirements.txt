@@ -1,0 +1,29 @@
+# FinSight AI — Backend Dependencies
+# Tested with Python 3.11+ (Render.com default)
+
+# Web framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0      # [standard] includes websockets + httptools for production
+pydantic>=2.0
+python-multipart>=0.0.6
+
+# LangChain core
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-text-splitters>=0.0.1
+
+# LLM providers (install both; only the one with a valid key will be used)
+langchain-google-genai>=0.0.6
+langchain-openai>=0.0.5
+openai>=1.0.0
+
+# Document loading
+langchain-community>=0.0.10
+pypdf>=3.9.0
+
+# Vector store
+chromadb>=0.4.0
+langchain-chroma>=0.1.0
+
+# Utilities
+python-dotenv>=1.0.0
