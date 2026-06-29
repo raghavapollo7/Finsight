@@ -10,4 +10,4 @@
  * After deploying to Render, update this line and push/re-deploy to Netlify.
  */
 
-window.FINSIGHT_API = "http://127.0.0.1:8000";
+window.FINSIGHT_API = "https://finsight-pyjw.onrender.com";
