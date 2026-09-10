@@ -222,6 +222,6 @@ Quick summary:
 
 ## 👤 Author
 
-**Raghava** · [github.com/raghavapollo7](https://github.com/raghavapollo7)
+**Raghav** · [github.com/raghavapollo7](https://github.com/raghavapollo7)
 
 Built as part of an exploration into LLMOps for financial services, anchored by a placement opportunity with **Aadhar Housing Finance**.
