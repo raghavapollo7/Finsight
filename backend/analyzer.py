@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from langchain_core.messages import HumanMessage
 
-from schema import FinancialAnalysisResult
+from schema import FinancialAnalysisResult, FinancialAnalysisResultLLM, llm_result_to_frontend
 from llm import get_llm, provider_name
 
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -248,14 +248,18 @@ async def analyze_document(file: UploadFile = File(...), docType: str = "bank_st
     # 3. LLM extraction with doc-type-specific prompt
     try:
         llm = get_llm()
-        structured_llm = llm.with_structured_output(FinancialAnalysisResult)
+        # Strict-mode-safe schema: metrics as a LIST (Groq/OpenAI strict mode
+        # requires additionalProperties:false on every object — impossible with
+        # a free-form dict). Converted to the dict shape after the call.
+        structured_llm = llm.with_structured_output(FinancialAnalysisResultLLM)
         chain = build_analyze_prompt(docType) | structured_llm
 
-        result: FinancialAnalysisResult = chain.invoke({
+        result_llm: FinancialAnalysisResultLLM = chain.invoke({
             "doc_type": docType.replace("_", " ").title(),
             "text": full_text,
         })
 
+        result = llm_result_to_frontend(result_llm)
         result.processingTime = round(time.time() - start_time, 2)
 
         # 4. Index text for conversational RAG

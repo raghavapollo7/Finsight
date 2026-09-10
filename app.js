@@ -286,8 +286,13 @@ async function startAnalysis() {
     });
 
     if (!apiResponse.ok) {
-      const errText = await apiResponse.text();
-      throw new Error(errText || "Analysis failed");
+      // FIX: extract the backend's real error detail instead of dumping raw JSON in the toast.
+      let detail = "Analysis failed";
+      try {
+        const errJson = JSON.parse(await apiResponse.text());
+        if (errJson.detail) detail = typeof errJson.detail === "string" ? errJson.detail : JSON.stringify(errJson.detail);
+      } catch (_) { /* keep default */ }
+      throw new Error(detail);
     }
 
     const realResult = await apiResponse.json();
