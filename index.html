@@ -2204,7 +2204,7 @@
             <td style="color:${r.riskColor};font-weight:700;font-family:'JetBrains Mono',monospace">${r.riskScore}/100</td>
             <td><span class="risk-pill ${r.riskScore>=70?'risk-low':r.riskScore>=45?'risk-medium':'risk-high'}">${r.riskLabel}</span></td>
             <td style="color:var(--text3)">${r.timestamp}</td>
-            <td><button class="btn-secondary btn-sm" onclick='downloadJSON(${JSON.stringify(r)})'>Export</button></td>
+            <td><button class="btn-secondary btn-sm" onclick='exportReportById(${r.id})'>Export PDF</button></td>
           </tr>`).join('')}
         </tbody>
       </table>`;

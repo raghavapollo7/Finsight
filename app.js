@@ -454,7 +454,8 @@ function addActivity(data) {
 
 function addReport(data) {
   const ts = new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  state.reports.unshift({ ...data, timestamp: ts, id: Date.now() });
+  // CHANGED: remember which document type produced this report (used by PDF exports)
+  state.reports.unshift({ ...data, docType: state.selectedDocType, timestamp: ts, id: Date.now() });
   renderReports();
 }
 
@@ -475,24 +476,16 @@ function renderReports() {
           <td style="color:${r.riskColor};font-weight:700;font-family:'JetBrains Mono',monospace">${r.riskScore}/100</td>
           <td><span class="activity-risk ${r.riskScore >= 70 ? 'risk-low' : r.riskScore >= 45 ? 'risk-medium' : 'risk-high'}">${r.riskLabel}</span></td>
           <td>${r.timestamp}</td>
-          <td><button class="btn-outline btn-sm" onclick='downloadJSON(${JSON.stringify(r)})'>Export</button></td>
+          <td><button class="btn-outline btn-sm" onclick='exportReportById(${r.id})'>Export PDF</button></td>
         </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────────
-function exportReport() {
-  if (!state.analysisResult) return;
-  downloadJSON(state.analysisResult);
-}
-function downloadJSON(data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `finsight_report_${data.company?.replace(/\s+/g, '_') || 'report'}.json`;
-  a.click();
-}
+// CHANGED: exportReport() now lives in report-pdf.js and downloads a formatted
+// PDF (was: raw JSON here). This stub is gone — the PDF engine owns exports.
+// PDF exports for saved reports: exportReportById(reportId) in report-pdf.js.
 
 function resetAnalysis() {
   state.selectedFile = null;

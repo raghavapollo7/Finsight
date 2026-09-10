@@ -221,8 +221,8 @@ function buildPDFContent(reportId, timestamp) {
       }).join('') + (extraFraudCount ? `<p style="font-size:11px;color:#64748B;margin:4px 0 0">+${extraFraudCount} additional flag(s) summarized in dashboard.</p>` : '')
     : `<p style="font-size:12px;color:#16A34A;font-weight:600;margin:0">No fraud flags detected. Statement appears clean.</p>`;
 
-  // ── Doc type label ──
-  const docLabel = (state.selectedDocType || 'bank_statement')
+  // ── Doc type label (uses the doc type stored with the report when exporting history) ──
+  const docLabel = (state._pdfDocType || state.selectedDocType || 'bank_statement')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase());
 
@@ -473,34 +473,37 @@ function closeReportModal() {
   }, 340);
 }
 
-// ─── 7. Download PDF ─────────────────────────────────────────────────────────
-async function downloadReport() {
-  // Guard: check libraries
+// ─── 7. PDF Generation Core ─────────────────────────────────────────────────
+// Renders ANY report-shaped data object through the A4 template and saves a PDF.
+// Temporarily swaps state.analysisResult so buildPDFContent can use it, then
+// restores it — so historical reports export correctly too.
+async function renderReportCanvas(data) {
   if (typeof html2canvas === 'undefined') {
-    showToast('⚠️ html2canvas library is still loading. Please wait.', 'error');
-    return;
+    throw new Error('html2canvas library is still loading. Please wait a moment and try again.');
   }
   if (!window.jspdf || !window.jspdf.jsPDF) {
-    showToast('⚠️ jsPDF library is still loading. Please wait.', 'error');
-    return;
+    throw new Error('jsPDF library is still loading. Please wait a moment and try again.');
+  }
+  if (!data || !data.extracted) {
+    throw new Error('No report data found to export.');
   }
 
-  const dlBtn = document.getElementById('rpt-modal-dl-btn');
-  if (dlBtn) {
-    dlBtn.disabled = true;
-    dlBtn.innerHTML = '<span class="rpt-spinner"></span>&nbsp; Generating…';
-  }
-
-  const tplEl = document.getElementById('pdf-tpl');
-  const inner = tplEl ? tplEl.querySelector('div') : null;
-
-  if (!inner) {
-    showToast('Report template is missing. Please reopen the modal.', 'error');
-    if (dlBtn) { dlBtn.disabled = false; dlBtn.innerHTML = 'Download PDF'; }
-    return;
-  }
+  const savedResult  = state.analysisResult;
+  const savedDocType = state._pdfDocType;
+  state.analysisResult = data;
+  state._pdfDocType    = data.docType || state.selectedDocType;
 
   try {
+    const reportId = generateReportId();
+    const timestamp = getISTTimestamp();
+    if (!buildPDFContent(reportId, timestamp)) {
+      throw new Error('Could not build report — no data found.');
+    }
+
+    const tplEl = document.getElementById('pdf-tpl');
+    const inner = tplEl ? tplEl.querySelector('div') : null;
+    if (!inner) throw new Error('Report template is missing.');
+
     const canvas = await html2canvas(inner, {
       scale: 2,
       useCORS: true,
@@ -518,25 +521,73 @@ async function downloadReport() {
     const imgH = (canvas.height * pdfW) / canvas.width;
 
     pdf.addImage(imgD, 'PNG', 0, 0, pdfW, Math.min(imgH, pdfH));
-    pdf.save(`FinSight_Report_${_reportId || 'export'}.pdf`);
+    pdf.save(`FinSight_Report_${reportId}.pdf`);
+    return reportId;
+  } finally {
+    state.analysisResult = savedResult;
+    state._pdfDocType    = savedDocType;
+  }
+}
 
+// Modal "Download PDF" button — renders the currently-previewed analysis.
+async function downloadReport() {
+  const dlBtn = document.getElementById('rpt-modal-dl-btn');
+  if (dlBtn) {
+    dlBtn.disabled = true;
+    dlBtn.innerHTML = '<span class="rpt-spinner"></span>&nbsp; Generating…';
+  }
+  try {
+    const reportId = await renderReportCanvas(state.analysisResult);
     closeReportModal();
     showToast('Report downloaded successfully', 'success');
-    // CHANGED: Feed successful exports into the topbar notification center when present.
     if (typeof addNotification === 'function') {
       addNotification({
         type: 'success',
         title: 'Report downloaded',
-        body: `Credit Risk PDF ${_reportId || ''} was saved successfully.`,
+        body: `Credit Risk PDF ${reportId || ''} was saved successfully.`,
         action: 'reports',
       });
     }
-
   } catch (err) {
     console.error('[ReportPDF] Error:', err);
-    showToast('❌ PDF generation failed. Please try again.', 'error');
+    showToast('❌ ' + (err.message || 'PDF generation failed. Please try again.'), 'error');
   } finally {
     if (dlBtn) { dlBtn.disabled = false; dlBtn.innerHTML = 'Download PDF'; }
+  }
+}
+
+// ─── 7b. One-click PDF Exports (no modal) ───────────────────────────────────
+// CHANGED: "Export Report" now downloads the formatted PDF instead of raw JSON.
+async function exportReport() {
+  if (!state.analysisResult) {
+    showToast('⚠️ Run an analysis first, then export.', 'error');
+    return;
+  }
+  try {
+    showToast('Generating PDF report…', 'success');
+    await renderReportCanvas(state.analysisResult);
+    showToast('PDF report downloaded successfully', 'success');
+  } catch (err) {
+    console.error('[ReportPDF] Export failed:', err);
+    showToast('❌ ' + (err.message || 'PDF export failed.'), 'error');
+  }
+}
+
+// CHANGED: Reports-table "Export" buttons now download the formatted PDF for
+// that specific historical report instead of raw JSON.
+async function exportReportById(reportId) {
+  const report = (state.reports || []).find(r => r.id === reportId);
+  if (!report) {
+    showToast('⚠️ Report not found. It may have been cleared on reload.', 'error');
+    return;
+  }
+  try {
+    showToast('Generating PDF report…', 'success');
+    await renderReportCanvas(report);
+    showToast('PDF report downloaded successfully', 'success');
+  } catch (err) {
+    console.error('[ReportPDF] Export failed:', err);
+    showToast('❌ ' + (err.message || 'PDF export failed.'), 'error');
   }
 }
 
