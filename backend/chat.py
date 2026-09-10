@@ -76,8 +76,14 @@ def clear_document_index() -> None:
 
 
 def _retrieve_context(query: str, k: int = 4) -> str:
-    retriever = vector_store.as_retriever(search_kwargs={"k": k})
-    docs = retriever.invoke(query)
+    """Works with both Chroma (vector) and BM25Retriever (keyword) stores."""
+    if hasattr(vector_store, "as_retriever"):
+        # Chroma vector store
+        retriever = vector_store.as_retriever(search_kwargs={"k": k})
+        docs = retriever.invoke(query)
+    else:
+        # BM25Retriever — already a retriever; invoke(query) returns docs directly
+        docs = vector_store.invoke(query)
     return "\n\n".join(d.page_content for d in docs)
 
 

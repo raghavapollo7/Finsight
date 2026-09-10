@@ -247,7 +247,10 @@ async def analyze_document(file: UploadFile = File(...), docType: str = "bank_st
 
     # 3. LLM extraction with doc-type-specific prompt
     try:
-        llm = get_llm()
+        # Generous output budget: reasoning models spend tokens thinking before
+        # emitting the JSON — if the budget runs out mid-JSON, strict-mode
+        # validation rejects the whole response ("missing properties").
+        llm = get_llm(temperature=0, max_tokens=8192)
         # Strict-mode-safe schema: metrics as a LIST (Groq/OpenAI strict mode
         # requires additionalProperties:false on every object — impossible with
         # a free-form dict). Converted to the dict shape after the call.

@@ -77,7 +77,9 @@ class FinancialAnalysisResultLLM(BaseModel):
     factors: List[RiskFactor] = Field(description="A breakdown of at least 4 critical risk factors relevant to this document type")
     insights: List[CreditInsight] = Field(description="At least 4 deep qualitative analysis observations grounded in the document's actual content")
     recommendation: str = Field(description="Eligibility status: 'ELIGIBLE', 'REVIEW', or 'DECLINE'")
-    processingTime: float = Field(default=0.0, description="Processing time in seconds")
+    # NOTE: no processingTime here — it is computed server-side after the LLM
+    # call. Asking the LLM to generate it wasted output tokens and could get
+    # truncated mid-JSON (Groq strict mode rejects truncated JSON outright).
 
 
 def llm_result_to_frontend(r: FinancialAnalysisResultLLM) -> FinancialAnalysisResult:
@@ -97,5 +99,5 @@ def llm_result_to_frontend(r: FinancialAnalysisResultLLM) -> FinancialAnalysisRe
         factors=r.factors,
         insights=r.insights,
         recommendation=r.recommendation,
-        processingTime=r.processingTime,
+        processingTime=0.0,  # set by analyzer.py after the call
     )

@@ -48,29 +48,38 @@ def embeddings_available() -> bool:
     return bool(os.environ.get("OPENAI_API_KEY") or os.environ.get("GEMINI_API_KEY"))
 
 
-def get_llm(temperature: float = 0):
-    """Returns the best available chat LLM — prefers Groq (free), then OpenAI, then Gemini."""
+def get_llm(temperature: float = 0, max_tokens: int | None = None):
+    """Returns the best available chat LLM — prefers Groq (free), then OpenAI, then Gemini.
+
+    max_tokens: raise it for structured extraction — reasoning models spend
+    output budget thinking before the JSON, and truncated JSON fails strict
+    schema validation outright.
+    """
     if os.environ.get("GROQ_API_KEY"):
         try:
             from langchain_openai import ChatOpenAI
+            extra = {"reasoning_effort": "low"} if GROQ_CHAT_MODEL.startswith("openai/gpt-oss") else {}
             return ChatOpenAI(
                 model=GROQ_CHAT_MODEL,
                 temperature=temperature,
                 api_key=os.environ["GROQ_API_KEY"],
                 base_url=GROQ_BASE_URL,
+                max_tokens=max_tokens,
+                extra_body=extra,
             )
         except ImportError:
             pass  # fall through to OpenAI/Gemini
     if os.environ.get("OPENAI_API_KEY"):
         try:
             from langchain_openai import ChatOpenAI
-            return ChatOpenAI(model=OPENAI_CHAT_MODEL, temperature=temperature)
+            return ChatOpenAI(model=OPENAI_CHAT_MODEL, temperature=temperature, max_tokens=max_tokens)
         except ImportError:
             pass  # fall through to Gemini
     if os.environ.get("GEMINI_API_KEY"):
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
-            return ChatGoogleGenerativeAI(model=GEMINI_CHAT_MODEL, temperature=temperature)
+            kwargs = {"max_output_tokens": max_tokens} if max_tokens else {}
+            return ChatGoogleGenerativeAI(model=GEMINI_CHAT_MODEL, temperature=temperature, **kwargs)
         except ImportError:
             pass
     raise HTTPException(
