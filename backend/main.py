@@ -38,6 +38,8 @@ def read_root():
     return {
         "status": "online",
         "api": "FinSight AI LangChain Backend",
+        "provider": __import__("llm").provider_name(),
+        "groq_api_key_configured": bool(os.environ.get("GROQ_API_KEY")),
         "gemini_api_key_configured": bool(os.environ.get("GEMINI_API_KEY")),
         "openai_api_key_configured": bool(os.environ.get("OPENAI_API_KEY"))
     }

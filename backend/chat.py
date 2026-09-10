@@ -1,123 +1,197 @@
-import os
 import warnings
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 from typing import List, Optional
-from pydantic import BaseModel
+
 from fastapi import APIRouter, HTTPException
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import HumanMessage, AIMessage
+from pydantic import BaseModel
 
 try:
     from langchain_chroma import Chroma
 except ImportError:
     from langchain_community.vectorstores import Chroma
 
+from llm import GEMINI_EMBED_MODEL, OPENAI_EMBED_MODEL, embeddings_available, get_embeddings, get_llm, provider_name
+
 router = APIRouter()
 
-# Global variable to store active in-memory Vector DB
+# In-memory vector DB + raw text of the last analyzed document.
+# NOTE: this is per-process memory — a Render free-tier restart clears it,
+# which is exactly why /chat must degrade gracefully (see no_document_reply).
 vector_store = None
+document_text = ""
+
 
 class ChatRequest(BaseModel):
     query: str
     history: Optional[List[List[str]]] = None
 
-def get_embeddings():
-    """Returns embeddings — prefers OpenAI, falls back to Gemini."""
-    if os.environ.get("OPENAI_API_KEY"):
-        from langchain_openai import OpenAIEmbeddings
-        return OpenAIEmbeddings(model="text-embedding-3-small")
-    elif os.environ.get("GEMINI_API_KEY"):
-        from langchain_google_genai import GoogleGenerativeAIEmbeddings
-        return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail="No API key found. Set OPENAI_API_KEY or GEMINI_API_KEY in backend/.env"
-        )
 
-def get_llm():
-    """Returns the best available LLM — prefers OpenAI, falls back to Gemini."""
-    if os.environ.get("OPENAI_API_KEY"):
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model="gpt-4o-mini")
-    elif os.environ.get("GEMINI_API_KEY"):
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        return ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite")
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail="No API key found. Set OPENAI_API_KEY or GEMINI_API_KEY in backend/.env"
-        )
+def index_document_text(text: str) -> bool:
+    """
+    Called by analyzer.py after extraction: chunk the document and build a
+    retriever — vector search (Chroma) when embeddings are available, otherwise
+    BM25 keyword search (Groq-only setups, where no embedding API exists).
+    Returns True on success. On failure it keeps the raw text so the chat can
+    still answer from context inline instead of dying entirely.
+    """
+    global vector_store, document_text
+    document_text = text or ""
 
-def index_document_text(text: str):
-    """
-    Called by analyzer.py to split document text and index it into Chroma.
-    """
-    global vector_store
     try:
-        # Split text into manageable chunks for vector embeddings
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         splits = text_splitter.split_text(text)
-        
-        # Initialize embeddings and Chroma
-        embeddings = get_embeddings()
-        
-        # Reset previous database and build a clean in-memory vector db
-        vector_store = Chroma.from_texts(
-            texts=splits,
-            embedding=embeddings
-        )
+        if not splits:
+            vector_store = None
+            return False
+
+        if embeddings_available():
+            try:
+                embeddings = get_embeddings()
+                # Rebuild from scratch so an old document never leaks into the next chat.
+                vector_store = Chroma.from_texts(texts=splits, embedding=embeddings)
+                return True
+            except Exception as e:
+                print(f"[chat] vector index failed, falling back to BM25: {e}")
+
+        # Groq-only (or embeddings failed) → BM25 keyword retriever.
+        from bm25_retriever import build_bm25_retriever
+        vector_store = build_bm25_retriever(splits)
+        print("[chat] using BM25 keyword retriever (no embedding provider)")
+        return True
     except Exception as e:
-        print(f"Error during vector DB indexing: {e}")
-        # Don't raise so analysis endpoint still returns data even if vector db indexing fails
+        print(f"[chat] index failed (raw-text fallback stays active): {e}")
         vector_store = None
+        return False
+
+
+def clear_document_index() -> None:
+    """Forget the current document (used when a new analysis starts)."""
+    global vector_store, document_text
+    vector_store = None
+    document_text = ""
+
+
+def _retrieve_context(query: str, k: int = 4) -> str:
+    retriever = vector_store.as_retriever(search_kwargs={"k": k})
+    docs = retriever.invoke(query)
+    return "\n\n".join(d.page_content for d in docs)
+
+
+def _chat_history_messages(history: Optional[List[List[str]]]) -> list:
+    msgs = []
+    if history:
+        for speaker, content in history[-10:]:
+            if not content:
+                continue
+            if speaker.lower() in ("human", "user"):
+                msgs.append(HumanMessage(content=content))
+            else:
+                msgs.append(AIMessage(content=content))
+    return msgs
+
+
+GENERAL_SYSTEM_PROMPT = (
+    "You are FinSight AI, an assistant for financial document analysis, SME lending, "
+    "and NBFC credit assessment. Answer the user's question helpfully and professionally. "
+    "If a financial document has been analyzed in this session, its details may be discussed "
+    "if the user asks about 'the document' — but no document content is available to you right now, "
+    "so never invent specific figures, companies, or statement values."
+)
+
+RAG_SYSTEM_PROMPT = (
+    "You are FinSight AI, a financial document assistant. Use ONLY the retrieved sections of "
+    "the analyzed financial document below to answer questions about the document — be precise "
+    "and cite specific details (bank names, dates, amounts) from it.\n\n"
+    "If the answer is not in the document, say so explicitly, then answer the general finance "
+    "part of the question from your own knowledge, clearly separating what came from the document "
+    "and what is general guidance.\n\n"
+    "Analyzed Document Context:\n{context}"
+)
+
+_NO_DOC_REPLY = (
+    "I don't have access to an analyzed document right now. Please upload a document in the "
+    "Analyzer tab — once analyzed, I can answer detailed questions about its contents."
+)
+
 
 @router.post("/chat")
 async def chat_with_document(payload: ChatRequest):
     global vector_store
-    if not vector_store:
-        return {
-            "response": "I don't have access to an analyzed document right now. Please upload a document in the Analyzer tab, and I'll analyze it so we can chat about its details!"
-        }
-        
-    try:
-        # 1. Retrieve the context
-        retriever = vector_store.as_retriever(search_kwargs={"k": 4})
-        retrieved_docs = retriever.invoke(payload.query)
-        context = "\n\n".join([doc.page_content for doc in retrieved_docs])
-        
-        # 2. Formulate Chat History messages
-        chat_history = []
-        if payload.history:
-            for speaker, content in payload.history:
-                if speaker.lower() in ("human", "user"):
-                    chat_history.append(HumanMessage(content=content))
-                else:
-                    chat_history.append(AIMessage(content=content))
-                    
-        # 3. Create prompt templates
-        system_prompt = (
-            "You are FinSight AI, a financial document assistant. Use the following retrieved sections of "
-            "the analyzed financial document to answer the user's question. Be precise, professional, and "
-            "cite specific details (like bank names, dates, and amounts) when answering.\n\n"
-            "If you cannot find the answer in the document, explain that the information is not in the statement, "
-            "but try to answer generic financial terms using your default knowledge.\n\n"
-            f"Analyzed Document Context:\n{context}"
-        )
-        
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            *chat_history,
-            ("human", "{input}"),
-        ])
-        
-        # 4. Invoke LLM
-        llm = get_llm()
-        chain = prompt | llm
-        
-        response = chain.invoke({"input": payload.query})
-        
-        return {"response": response.content}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Conversational retrieval failed: {str(e)}")
+
+    if not (payload.query or "").strip():
+        raise HTTPException(status_code=400, detail="Query must not be empty.")
+
+    # ── Path 1: document indexed → real RAG answer ──────────────────────────
+    if vector_store is not None:
+        try:
+            context = _retrieve_context(payload.query)
+            llm = get_llm()
+            prompt = [
+                ("system", RAG_SYSTEM_PROMPT.format(context=context)),
+                *_chat_history_messages(payload.history),
+                ("human", payload.query),
+            ]
+            response = await llm.ainvoke(prompt)
+            return {"response": response.content, "source": "document"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            # Surface the real error (e.g. retired model name, bad API key)
+            # instead of silently returning the same canned message forever.
+            detail = str(e)
+            print(f"[chat] RAG failed: {detail}")
+            raise HTTPException(status_code=500, detail=f"Chat failed: {detail}")
+
+    # ── Path 2: no document, but an API key exists → general LLM answer ────
+    # Old behavior: always return the same canned sentence — this is the exact
+    # "one response for every question" bug. Now we actually answer.
+    if provider_name() is not None:
+        try:
+            llm = get_llm()
+            prompt = [
+                ("system", GENERAL_SYSTEM_PROMPT),
+                *_chat_history_messages(payload.history),
+                ("human", payload.query),
+            ]
+            response = await llm.ainvoke(prompt)
+            return {
+                "response": response.content,
+                "source": "general",
+                "note": "No document is currently indexed — this is a general-knowledge answer. Upload and analyze a document for document-specific answers.",
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            detail = str(e)
+            print(f"[chat] general LLM failed: {detail}")
+            raise HTTPException(status_code=500, detail=f"Chat failed: {detail}")
+
+    # ── Path 3: no document AND no API key ──────────────────────────────────
+    raise HTTPException(
+        status_code=503,
+        detail="LLM backend is not configured: no OPENAI_API_KEY or GEMINI_API_KEY is set on the server. "
+               "Add a key (locally in backend/.env, or on Render under Environment) and restart.",
+    )
+
+
+@router.get("/chat/status")
+async def chat_status():
+    """Lets the frontend show an accurate banner instead of guessing."""
+    return {
+        "documentIndexed": vector_store is not None,
+        "documentChars": len(document_text),
+        "llmConfigured": provider_name() is not None,
+        "embeddingModel": (
+            OPENAI_EMBED_MODEL if provider_name() == "openai"
+            else GEMINI_EMBED_MODEL if provider_name() == "gemini"
+            else "bm25-keyword" if not embeddings_available()
+            else None
+        ),
+    }
+

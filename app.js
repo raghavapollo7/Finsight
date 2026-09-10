@@ -571,12 +571,19 @@ async function getAIResponseAsync(userMsg) {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(errText || "Chat request failed");
+      // FIX: extract the backend's real error detail (e.g. "no API key configured",
+      // retired-model errors) instead of dumping the whole JSON body.
+      let detail = `Chat request failed (HTTP ${response.status})`;
+      try {
+        const errJson = JSON.parse(await response.text());
+        if (errJson.detail) detail = errJson.detail;
+      } catch (_) { /* keep default */ }
+      throw new Error(detail);
     }
 
     const data = await response.json();
 
+    state.chatHistory = state.chatHistory || [];
     state.chatHistory.push(["human", userMsg]);
     state.chatHistory.push(["ai", data.response]);
     if (state.chatHistory.length > 20) {
@@ -584,12 +591,29 @@ async function getAIResponseAsync(userMsg) {
       state.chatHistory.shift();
     }
 
-    return data.response;
+    // Backend now returns plain text — escape it and preserve line breaks.
+    return formatBotText(data.response);
   } catch (error) {
-    console.error("RAG Chat Error:", error);
-    const localResp = getAIResponse(userMsg);
-    return `⚠️ <em>Assistant backend offline. Using cached knowledge base:</em><br><br>${localResp}`;
+    console.error("Chat error:", error);
+    // Network-level failure (fetch itself threw) → server unreachable.
+    if (error instanceof TypeError) {
+      const localResp = getAIResponse(userMsg);
+      return `⚠️ <em>Can't reach the assistant backend (${window.FINSIGHT_API}). Showing offline fallback:</em><br><br>${localResp}`;
+    }
+    // Backend responded with an error — show the actual reason.
+    return `⚠️ <em>Assistant error:</em><br><br>${escapeHtml(error.message || "Chat failed")}`;
   }
+}
+
+// ─── Chat text helpers ──────────────────────────────────────────────────────
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+function formatBotText(text) {
+  return escapeHtml(text).replace(/\n/g, '<br>');
 }
 
 async function sendMessage() {

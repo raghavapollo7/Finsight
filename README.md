@@ -147,14 +147,34 @@ Open `http://localhost:3000` in your browser.
 Copy `backend/.env.example` to `backend/.env` and fill in one of the following:
 
 ```env
-# Option A — Google Gemini (free tier available)
+# Option A — Groq (RECOMMENDED: 100% free, no credit card needed)
+# Get a key in ~30 seconds at https://console.groq.com/keys
+GROQ_API_KEY=gsk_...your-key...
+
+# Option B — Google Gemini (free tier available)
 GEMINI_API_KEY=AIza...your-key...
 
-# Option B — OpenAI
+# Option C — OpenAI (paid)
 OPENAI_API_KEY=sk-...your-key...
 ```
 
+> **Why Groq first?** It's a permanently free tier (rate-limited, not trial) with OpenAI-compatible open-weight models (gpt-oss). Groq hosts no embedding models, so in Groq-only mode the RAG chat automatically uses built-in **BM25 keyword retrieval** instead of vector search — no extra API needed for single-document Q&A.
+
 > ⚠️ Never commit your `.env` file. It is already in `.gitignore`.
+
+#### OCR setup (needed for images & scanned PDFs)
+
+The Python `pytesseract` wrapper is installed by `requirements.txt`, but the **Tesseract engine** must be installed separately:
+
+- **Windows**: installer from [UB-Mannheim/tesseract](https://github.com/UB-Mannheim/tesseract/wiki) (tick "Add to PATH")
+- **macOS**: `brew install tesseract`
+- **Linux**: `sudo apt install tesseract-ocr`
+
+No Tesseract? Set `EXTRACTION_MODE=llm_vision` in `.env` with a `GEMINI_API_KEY` — Gemini reads document images directly (no OCR engine needed). Plain-text PDFs and text files work without either.
+
+#### Model configuration
+
+Model names live in `backend/llm.py` and default to **`openai/gpt-oss-20b`** (Groq), **`gemini-2.5-flash`**, **`gemini-embedding-001`**, and **`gpt-4o-mini`** — all currently active. Older code pinned `text-embedding-004` and `gemini-2.0-flash-lite`, which Google retired (Jan 2026 / Jun 2026) and which caused every LLM call to fail. Override via env vars: `GROQ_CHAT_MODEL`, `GEMINI_CHAT_MODEL`, `GEMINI_EMBED_MODEL`, `OPENAI_CHAT_MODEL`, `OPENAI_EMBED_MODEL`.
 
 ---
 
@@ -172,6 +192,8 @@ Quick summary:
 2. Deploy `backend/` as a Web Service on Render → set your API key in Environment
 3. Copy the Render URL → update `config.js` with it
 4. Deploy root folder on Netlify
+
+> **Important:** set `GEMINI_API_KEY` (or `OPENAI_API_KEY`) under Render → Environment. If the key is missing, the chatbot returns an explicit 503 error telling you so — check the browser console / network tab. Verify anytime by opening your Render URL in a browser: the status JSON shows which keys are configured.
 
 ---
 

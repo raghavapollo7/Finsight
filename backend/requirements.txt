@@ -16,10 +16,18 @@ langchain-text-splitters>=0.0.1
 langchain-google-genai>=0.0.6
 langchain-openai>=0.0.5
 openai>=1.0.0
-
 # Document loading
+docx2txt>=0.8
 langchain-community>=0.0.10
+pdfplumber>=0.10.0
 pypdf>=3.9.0
+pymupdf>=1.24.0
+
+# OCR (needed for images & scanned PDFs)
+# NOTE: this installs the Python wrapper only — the Tesseract ENGINE must also
+# be installed on the machine (see README "OCR setup").
+pytesseract>=0.3.10
+Pillow>=10.0.0
 
 # Vector store
 chromadb>=0.4.0
